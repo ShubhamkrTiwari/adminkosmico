@@ -47,8 +47,8 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final response = await _apiClient.post('/login', {
-        'email': email,
-        'password': password,
+        'email': email.trim(),
+        'password': password.trim(),
       });
 
       debugPrint('Login Response: ${response.body}');

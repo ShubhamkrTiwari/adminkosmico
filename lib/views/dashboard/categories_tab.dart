@@ -23,20 +23,35 @@ class _CategoriesTabState extends State<CategoriesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 32),
-          Expanded(child: _buildCategoryGrid()),
-        ],
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: !isDesktop 
+          ? FloatingActionButton(
+              onPressed: () => _showCategoryDialog(),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add_rounded, color: Colors.white),
+            )
+          : null,
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(isDesktop),
+              const SizedBox(height: 32),
+              Expanded(child: _buildCategoryGrid()),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDesktop) {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth > 600) {
@@ -57,13 +72,15 @@ class _CategoriesTabState extends State<CategoriesTab> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeaderText(),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => _showCategoryDialog(),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('New Category'),
-                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-              ),
+              if (isDesktop) ...[
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _showCategoryDialog(),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('New Category'),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                ),
+              ],
             ],
           );
         }
@@ -112,39 +129,86 @@ class _CategoriesTabState extends State<CategoriesTab> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          )
+        ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: const Icon(Icons.category_outlined, size: 48, color: AppColors.primary),
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.03),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.spa_outlined,
+                      size: 48,
+                      color: AppColors.primary.withOpacity(0.2),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: category.isVisible ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      category.isVisible ? 'Visible' : 'Hidden',
+                      style: TextStyle(
+                        color: category.isVisible ? Colors.green : Colors.grey,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  category.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
-                Text(category.slug, style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                Text(
+                  '/${category.slug}',
+                  style: TextStyle(color: AppColors.textLight, fontSize: 12, fontStyle: FontStyle.italic),
+                ),
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => _showCategoryDialog(category: category),
+                    _buildActionButton(
+                      icon: Icons.edit_outlined,
+                      color: AppColors.primary,
+                      onTap: () => _showCategoryDialog(category: category),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
-                      onPressed: () => _showDeleteConfirm(category),
+                    const SizedBox(width: 8),
+                    _buildActionButton(
+                      icon: Icons.delete_outline_rounded,
+                      color: Colors.redAccent,
+                      onTap: () => _showDeleteConfirm(category),
                     ),
                   ],
                 ),
@@ -152,6 +216,21 @@ class _CategoriesTabState extends State<CategoriesTab> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({required IconData icon, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: color),
       ),
     );
   }

@@ -117,6 +117,83 @@ class _UpdatesTabState extends State<UpdatesTab> {
   }
 
   void _showUpdateDialog() {
-    // TODO: Implement Publish Update Dialog
+    showDialog(
+      context: context,
+      builder: (context) => UpdateDialog(),
+    );
+  }
+}
+
+class UpdateDialog extends StatefulWidget {
+  @override
+  State<UpdateDialog> createState() => _UpdateDialogState();
+}
+
+class _UpdateDialogState extends State<UpdateDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _versionController = TextEditingController();
+  final _notesController = TextEditingController();
+  String _type = 'feature';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Publish New Update'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (v) => v!.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _versionController,
+                decoration: const InputDecoration(labelText: 'Version (e.g., 1.0.5)'),
+                validator: (v) => v!.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _type,
+                items: ['feature', 'fix', 'patch', 'maintenance']
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t.toUpperCase())))
+                    .toList(),
+                onChanged: (v) => setState(() => _type = v!),
+                decoration: const InputDecoration(labelText: 'Type'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(labelText: 'Release Notes'),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              final success = await context.read<UpdateProvider>().createUpdate({
+                'title': _titleController.text,
+                'version': _versionController.text,
+                'type': _type,
+                'notes': _notesController.text,
+                'publishStatus': 'published',
+              });
+              if (success && mounted) Navigator.pop(context);
+            }
+          },
+          child: const Text('Publish'),
+        ),
+      ],
+    );
   }
 }

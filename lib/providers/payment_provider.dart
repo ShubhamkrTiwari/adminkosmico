@@ -17,7 +17,7 @@ class PaymentProvider extends ChangeNotifier {
       final response = await _apiClient.get('/payments');
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        _payments = result['data'];
+        _payments = result['payments'] ?? result['data'] ?? [];
       }
     } catch (e) {
       debugPrint('Error fetching payments: $e');

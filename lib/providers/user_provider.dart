@@ -11,22 +11,25 @@ class UserProvider extends ChangeNotifier {
   List<User> get users => _users;
   bool get isLoading => _isLoading;
 
+  void setUsersFromDashboard(List<dynamic> list) {
+    try {
+      _users = list.map((item) => User.fromJson(item)).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error parsing users from dashboard: $e');
+    }
+  }
+
   Future<void> fetchUsers() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // In your master dashboard API, users might already be in DashboardProvider.
-      // But if we call this directly, we fetch from /users
       final response = await _apiClient.get('/users');
-      
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        List? list = result['users'] ?? result['data'];
-        
-        if (list != null) {
-          _users = list.map((item) => User.fromJson(item)).toList();
-        }
+        final List list = result['users'] ?? result['data'] ?? [];
+        _users = list.map((item) => User.fromJson(item)).toList();
       }
     } catch (e) {
       debugPrint('Error fetching users: $e');
@@ -34,6 +37,19 @@ class UserProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<Map<String, dynamic>?> fetchUserDetails(String id) async {
+    try {
+      final response = await _apiClient.get('/users/$id');
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        return result['data'] ?? result;
+      }
+    } catch (e) {
+      debugPrint('Error fetching user details: $e');
+    }
+    return null;
   }
 
   Future<bool> toggleUserBlock(String id) async {

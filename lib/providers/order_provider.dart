@@ -11,6 +11,15 @@ class OrderProvider extends ChangeNotifier {
   List<Order> get orders => _orders;
   bool get isLoading => _isLoading;
 
+  void setOrdersFromDashboard(List<dynamic> list) {
+    try {
+      _orders = list.map((item) => Order.fromJson(item)).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error parsing orders from dashboard: $e');
+    }
+  }
+
   Future<void> fetchOrders() async {
     _isLoading = true;
     notifyListeners();
@@ -19,10 +28,8 @@ class OrderProvider extends ChangeNotifier {
       final response = await _apiClient.get('/orders');
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        List? list = result['orders'] ?? (result['data'] is List ? result['data'] : result['data']?['orders']);
-        if (list != null) {
-          _orders = list.map((item) => Order.fromJson(item)).toList();
-        }
+        final List list = result['orders'] ?? result['data'] ?? [];
+        _orders = list.map((item) => Order.fromJson(item)).toList();
       }
     } catch (e) {
       debugPrint('Error fetching orders: $e');
@@ -36,11 +43,8 @@ class OrderProvider extends ChangeNotifier {
     try {
       final response = await _apiClient.put('/orders/$id/status', {'status': status});
       if (response.statusCode == 200) {
-        final index = _orders.indexWhere((o) => o.id == id);
-        if (index != -1) {
-          fetchOrders(); // Refresh to get updated data
-          return true;
-        }
+        fetchOrders();
+        return true;
       }
     } catch (e) {
       debugPrint('Error updating order status: $e');

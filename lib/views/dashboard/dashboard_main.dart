@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/dashboard_provider.dart';
@@ -9,6 +10,7 @@ import '../../providers/order_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/payment_provider.dart';
 import '../../providers/update_provider.dart';
+import '../../providers/maintenance_provider.dart';
 import '../../widgets/sidebar.dart';
 import 'overview_tab.dart';
 import 'products_tab.dart';
@@ -18,6 +20,7 @@ import 'users_tab.dart';
 import 'notifications_tab.dart';
 import 'payments_tab.dart';
 import 'updates_tab.dart';
+import 'maintenance_tab.dart';
 
 class DashboardMain extends StatefulWidget {
   const DashboardMain({super.key});
@@ -38,7 +41,8 @@ class _DashboardMainState extends State<DashboardMain> {
     'User Management',
     'Notifications',
     'Payments & Transactions',
-    'App Updates'
+    'App Updates',
+    'Maintenance'
   ];
 
   int _getBottomNavIndex(int tabIndex) {
@@ -65,28 +69,30 @@ class _DashboardMainState extends State<DashboardMain> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
-        centerTitle: !isDesktop,
+        title: Text(
+          _titles[_selectedIndex],
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        centerTitle: true,
         elevation: 0,
+        backgroundColor: const Color(0xFFF8FAF8),
         actions: [
           IconButton(
-            icon: Icon(themeProvider.themeMode == ThemeMode.dark
-                ? Icons.light_mode_rounded
-                : Icons.dark_mode_rounded),
+            icon: Icon(
+              themeProvider.themeMode == ThemeMode.dark
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              size: 22,
+            ),
             onPressed: () => themeProvider.toggleTheme(),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, size: 22),
             onPressed: () {
-              switch (_selectedIndex) {
-                case 0: context.read<DashboardProvider>().fetchDashboardData(); break;
-                case 1: context.read<ProductProvider>().fetchProducts(); break;
-                case 2: context.read<CategoryProvider>().fetchCategories(); break;
-                case 3: context.read<OrderProvider>().fetchOrders(); break;
-                case 4: context.read<UserProvider>().fetchUsers(); break;
-                case 6: context.read<PaymentProvider>().fetchPayments(); break;
-                case 7: context.read<UpdateProvider>().fetchUpdates(); break;
-              }
+              context.read<DashboardProvider>().fetchDashboardData(context);
+              context.read<ProductProvider>().fetchProducts();
+              context.read<CategoryProvider>().fetchCategories();
+              context.read<MaintenanceProvider>().fetchMaintenanceStatus();
             },
           ),
           const SizedBox(width: 8),
@@ -99,40 +105,57 @@ class _DashboardMainState extends State<DashboardMain> {
           if (!isDesktop) Navigator.pop(context);
         },
       ),
-      floatingActionButton: (!isDesktop && (_selectedIndex == 1 || _selectedIndex == 2))
-          ? FloatingActionButton(
-              onPressed: () {
-                if (_selectedIndex == 1) {
-                  _showProductDialog(context);
-                } else if (_selectedIndex == 2) {
-                  _showCategoryDialog(context);
-                }
-              },
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add_rounded, color: Colors.white),
-            )
-          : null,
       bottomNavigationBar: !isDesktop
-          ? BottomNavigationBar(
-              currentIndex: _getBottomNavIndex(_selectedIndex),
-              onTap: (index) {
-                if (index == 4) {
-                  _scaffoldKey.currentState?.openDrawer();
-                } else {
-                  setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
-                }
-              },
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: Colors.grey,
-              showUnselectedLabels: true,
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Overview'),
-                BottomNavigationBarItem(icon: Icon(Icons.inventory_2_rounded), label: 'Products'),
-                BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_rounded), label: 'Orders'),
-                BottomNavigationBarItem(icon: Icon(Icons.people_rounded), label: 'Users'),
-                BottomNavigationBarItem(icon: Icon(Icons.menu_rounded), label: 'More'),
-              ],
+          ? Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _getBottomNavIndex(_selectedIndex),
+                onTap: (index) {
+                  if (index == 4) {
+                    _scaffoldKey.currentState?.openDrawer();
+                  } else {
+                    setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
+                  }
+                },
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: Colors.white,
+                elevation: 0,
+                selectedItemColor: AppColors.primary,
+                unselectedItemColor: Colors.grey.shade400,
+                selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11),
+                unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 11),
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.grid_view_rounded)), 
+                    label: 'Overview',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.inventory_2_outlined)), 
+                    label: 'Products',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.shopping_bag_outlined)), 
+                    label: 'Orders',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.people_outline_rounded)), 
+                    label: 'Users',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.menu_rounded)), 
+                    label: 'More',
+                  ),
+                ],
+              ),
             )
           : null,
       body: Row(
@@ -156,6 +179,7 @@ class _DashboardMainState extends State<DashboardMain> {
                   NotificationsTab(),
                   PaymentsTab(),
                   UpdatesTab(),
+                  MaintenanceTab(),
                 ],
               ),
             ),

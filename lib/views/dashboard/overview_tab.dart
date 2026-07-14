@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/user_provider.dart';
+import '../../providers/order_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../widgets/stat_card.dart';
 
 class OverviewTab extends StatefulWidget {
@@ -19,8 +22,12 @@ class _OverviewTabState extends State<OverviewTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>().fetchDashboardData();
+      _loadData();
     });
+  }
+
+  Future<void> _loadData() async {
+    await context.read<DashboardProvider>().fetchDashboardData(context);
   }
 
   @override
@@ -39,79 +46,107 @@ class _OverviewTabState extends State<OverviewTab> {
         final salesData = provider.data?['salesData'] as List? ?? [];
 
         return RefreshIndicator(
-          onRefresh: () => provider.fetchDashboardData(),
+          onRefresh: _loadData,
           color: AppColors.primary,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Quick Statistics',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildResponsiveGrid(context, [
-                  StatCard(
-                    title: 'Revenue',
-                    value: currencyFormat.format(stats?['totalRevenue'] ?? 0),
-                    icon: Icons.account_balance_wallet_outlined,
-                    color: Colors.green,
-                  ),
-                  StatCard(
-                    title: 'Orders',
-                    value: (stats?['totalOrders'] ?? 0).toString(),
-                    icon: Icons.shopping_cart_outlined,
-                    color: Colors.blue,
-                  ),
-                  StatCard(
-                    title: 'Customers',
-                    value: (stats?['totalUsers'] ?? 0).toString(),
-                    icon: Icons.people_outline_rounded,
-                    color: Colors.orange,
-                  ),
-                  StatCard(
-                    title: 'Alerts',
-                    value: (stats?['totalNotifications'] ?? 0).toString(),
-                    icon: Icons.notifications_none_rounded,
-                    color: Colors.purple,
-                  ),
-                ]),
-                const SizedBox(height: 32),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth > 800) {
-                      return Row(
+          child: Material(
+            color: const Color(0xFFF8FAF8), 
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 2,
-                            child: _buildSalesChart(context, salesData),
+                          Text(
+                            'Dashboard',
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
                           ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildInventoryAlerts(context, lowStock),
+                          Text(
+                            DateFormat('EEEE, MMM dd').format(DateTime.now()),
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: AppColors.textLight,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
-                      );
-                    } else {
-                      return Column(
-                        children: [
-                          _buildSalesChart(context, salesData),
-                          const SizedBox(height: 24),
-                          _buildInventoryAlerts(context, lowStock),
-                        ],
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 32),
-                _buildRecentOrdersSection(context, recentOrders),
-              ],
+                      ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Compact 2-column grid for Stats
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.4,
+                    children: [
+                      StatCard(
+                        title: 'Revenue',
+                        value: currencyFormat.format(stats?['totalRevenue'] ?? 0),
+                        icon: Icons.account_balance_wallet_rounded,
+                        color: Colors.green,
+                        trend: '+12%',
+                      ),
+                      StatCard(
+                        title: 'Orders',
+                        value: (stats?['totalOrders'] ?? 0).toString(),
+                        icon: Icons.shopping_basket_rounded,
+                        color: Colors.blue,
+                        trend: '+5%',
+                      ),
+                      StatCard(
+                        title: 'Customers',
+                        value: (stats?['totalUsers'] ?? 0).toString(),
+                        icon: Icons.people_alt_rounded,
+                        color: Colors.orange,
+                      ),
+                      StatCard(
+                        title: 'Alerts',
+                        value: (stats?['totalNotifications'] ?? 0).toString(),
+                        icon: Icons.notifications_active_rounded,
+                        color: Colors.purple,
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Sales Overview'),
+                  const SizedBox(height: 16),
+                  _buildSalesChart(context, salesData),
+                  
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: _buildSectionHeader('Stock Alerts')),
+                      TextButton(onPressed: () {}, child: const Text('View All')),
+                    ],
+                  ),
+                  _buildInventoryAlerts(context, lowStock),
+                  
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Recent Activity'),
+                  const SizedBox(height: 16),
+                  _buildRecentOrdersSection(context, recentOrders),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
@@ -119,9 +154,23 @@ class _OverviewTabState extends State<OverviewTab> {
     );
   }
 
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textDark,
+      ),
+    );
+  }
+
   Widget _buildResponsiveGrid(BuildContext context, List<Widget> children) {
     double width = MediaQuery.of(context).size.width;
     int crossAxisCount = width > 1200 ? 4 : (width > 600 ? 2 : 1);
+    
+    // Adjusting aspect ratio to make cards less tall on mobile
+    double aspectRatio = width > 1200 ? 1.6 : (width > 800 ? 1.8 : 2.2);
     
     return GridView.count(
       crossAxisCount: crossAxisCount,
@@ -129,7 +178,7 @@ class _OverviewTabState extends State<OverviewTab> {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: width > 1200 ? 1.6 : (width > 800 ? 1.8 : 2.2),
+      childAspectRatio: aspectRatio,
       children: children,
     );
   }

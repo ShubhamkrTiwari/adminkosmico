@@ -16,8 +16,8 @@ class AppColors {
 
 class AppConstants {
   static const String appName = 'Kosmico Wellness Admin';
-  // Production API Base URL
-  static const String baseUrl = 'http://3.7.180.215/api/admin';
+  // Production API Base URL on Port 5000
+  static const String baseUrl = 'http://3.7.180.215:5000/api/admin';
 
   
   static const double sidebarWidth = 260.0;

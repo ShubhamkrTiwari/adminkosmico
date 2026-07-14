@@ -19,7 +19,7 @@ class CategoryProvider extends ChangeNotifier {
       final response = await _apiClient.get('/categories');
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        final List list = result['data']['categories'];
+        final List list = result['categories'] ?? result['data']?['categories'] ?? result['data'] ?? [];
         _categories = list.map((item) => Category.fromJson(item)).toList();
       }
     } catch (e) {

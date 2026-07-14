@@ -41,15 +41,18 @@ class _ProductsTabState extends State<ProductsTab> {
           : null,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(isDesktop),
-            const SizedBox(height: 32),
-            _buildFilters(),
-            const SizedBox(height: 24),
-            Expanded(child: _buildProductTable()),
-          ],
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(isDesktop),
+              const SizedBox(height: 32),
+              _buildFilters(),
+              const SizedBox(height: 24),
+              Expanded(child: _buildProductTable()),
+            ],
+          ),
         ),
       ),
     );
@@ -190,39 +193,99 @@ class _ProductsTabState extends State<ProductsTab> {
       DataCell(Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
             ),
-            child: const Icon(Icons.image_outlined, size: 18, color: AppColors.primary),
+            child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
           ),
-          const SizedBox(width: 12),
-          Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  p.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'ID: ${p.id.substring(p.id.length - 6).toUpperCase()}',
+                  style: TextStyle(color: AppColors.textLight, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
         ],
       )),
-      DataCell(Text(p.categoryName ?? 'General')),
-      DataCell(Text('₹${p.price}')),
-      DataCell(Text(p.stock.toString(), style: TextStyle(
-        fontWeight: p.stock < 10 ? FontWeight.bold : FontWeight.normal,
-        color: p.stock < 10 ? Colors.red : null,
-      ))),
-      DataCell(Switch(
+      DataCell(Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          p.categoryName ?? 'General',
+          style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      )),
+      DataCell(Text('₹${p.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600))),
+      DataCell(Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: (p.stock < 10 ? Colors.red : Colors.green).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          p.stock.toString(),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: p.stock < 10 ? Colors.red : Colors.green,
+            fontSize: 12,
+          ),
+        ),
+      )),
+      DataCell(Switch.adaptive(
         value: p.isVisible,
         onChanged: (val) => context.read<ProductProvider>().toggleVisibility(p.id, val),
-        activeThumbColor: AppColors.primary,
+        activeColor: AppColors.primary,
       )),
       DataCell(Row(
         children: [
-          IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _showProductDialog(product: p)),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
-            onPressed: () => _showDeleteConfirm(p),
+          _buildActionButton(
+            icon: Icons.edit_outlined,
+            color: AppColors.primary,
+            onTap: () => _showProductDialog(product: p),
+          ),
+          const SizedBox(width: 8),
+          _buildActionButton(
+            icon: Icons.delete_outline_rounded,
+            color: Colors.redAccent,
+            onTap: () => _showDeleteConfirm(p),
           ),
         ],
       )),
     ]);
+  }
+
+  Widget _buildActionButton({required IconData icon, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: color),
+      ),
+    );
   }
 
   void _showProductDialog({Product? product}) {

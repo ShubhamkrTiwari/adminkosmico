@@ -97,6 +97,7 @@ class Sidebar extends StatelessWidget {
                   _buildSectionTitle('SYSTEM'),
                   _buildNavItem(context, 6, Icons.payments_rounded, 'Payments'),
                   _buildNavItem(context, 7, Icons.system_update_rounded, 'App Updates'),
+                  _buildNavItem(context, 8, Icons.settings_applications_rounded, 'Maintenance'),
                 ],
               ),
             ),

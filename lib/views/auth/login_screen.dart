@@ -149,24 +149,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       
                       const SizedBox(height: 24),
                       
-                      // Login Button
-                      Consumer<AuthProvider>(
-                        builder: (context, auth, _) {
-                          return ElevatedButton(
-                            onPressed: auth.isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: auth.isLoading
-                                ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                                  )
-                                : const Text('Login to Dashboard'),
-                          );
-                        },
-                      ),
+                    Consumer<AuthProvider>(
+                      builder: (context, auth, _) {
+                        return ElevatedButton(
+                          onPressed: auth.isLoading ? null : _handleLogin,
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: auth.isLoading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                )
+                              : const Text('Login to Dashboard'),
+                        );
+                      },
+                    ),
                       
                       const SizedBox(height: 32),
                       Row(

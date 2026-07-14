@@ -66,7 +66,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 rows: provider.payments.map((p) => DataRow(cells: [
                   DataCell(Text(p['_id'].toString().substring(p['_id'].toString().length - 10).toUpperCase())),
                   DataCell(Text(p['user']?['name'] ?? 'Guest')),
-                  DataCell(Text('₹${p['total']}', style: const TextStyle(fontWeight: FontWeight.bold))),
+                  DataCell(Text('₹${p['amount'] ?? p['total']}', style: const TextStyle(fontWeight: FontWeight.bold))),
                   DataCell(Text(p['paymentMethod']?.toUpperCase() ?? 'N/A')),
                   DataCell(_buildStatusChip(p['paymentStatus'])),
                   DataCell(Text(DateFormat('MMM dd, hh:mm a').format(DateTime.parse(p['createdAt'])))),

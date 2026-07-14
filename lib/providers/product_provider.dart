@@ -22,7 +22,7 @@ class ProductProvider extends ChangeNotifier {
       final response = await _apiClient.get('/products');
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        final List list = result['data']['products'];
+        final List list = result['products'] ?? result['data']?['products'] ?? result['data'] ?? [];
         _products = list.map((item) => Product.fromJson(item)).toList();
       } else {
         _error = 'Failed to load products';

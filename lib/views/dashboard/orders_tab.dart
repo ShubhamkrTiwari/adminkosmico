@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../models/order.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/dashboard_provider.dart';
 
 class OrdersTab extends StatefulWidget {
   const OrdersTab({super.key});
@@ -20,7 +21,9 @@ class _OrdersTabState extends State<OrdersTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<OrderProvider>().fetchOrders();
+      if (context.read<OrderProvider>().orders.isEmpty) {
+        context.read<DashboardProvider>().fetchDashboardData(context);
+      }
     });
   }
 
@@ -28,15 +31,18 @@ class _OrdersTabState extends State<OrdersTab> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 32),
-          _buildFilters(),
-          const SizedBox(height: 24),
-          Expanded(child: _buildOrderTable()),
-        ],
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 32),
+            _buildFilters(),
+            const SizedBox(height: 24),
+            Expanded(child: _buildOrderTable()),
+          ],
+        ),
       ),
     );
   }
