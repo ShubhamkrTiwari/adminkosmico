@@ -1,0 +1,65 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import '../core/api_client.dart';
+import '../models/user.dart';
+
+class UserProvider extends ChangeNotifier {
+  final ApiClient _apiClient = ApiClient();
+  List<User> _users = [];
+  bool _isLoading = false;
+
+  List<User> get users => _users;
+  bool get isLoading => _isLoading;
+
+  Future<void> fetchUsers() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // In your master dashboard API, users might already be in DashboardProvider.
+      // But if we call this directly, we fetch from /users
+      final response = await _apiClient.get('/users');
+      
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        List? list = result['users'] ?? result['data'];
+        
+        if (list != null) {
+          _users = list.map((item) => User.fromJson(item)).toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching users: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<bool> toggleUserBlock(String id) async {
+    try {
+      final response = await _apiClient.put('/users/$id/block', {});
+      if (response.statusCode == 200) {
+        fetchUsers();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error blocking user: $e');
+    }
+    return false;
+  }
+
+  Future<bool> deleteUser(String id) async {
+    try {
+      final response = await _apiClient.delete('/users/$id');
+      if (response.statusCode == 200) {
+        _users.removeWhere((u) => u.id == id);
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error deleting user: $e');
+    }
+    return false;
+  }
+}
