@@ -13,16 +13,16 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   });
 }
 
-const sendOTPEmail = async (email, otp) => {
+const sendOTPEmail = async (email, otp, subject = 'Kosmico Wellness - Verify Your Email', title = 'Welcome to Kosmico Wellness') => {
   if (transporter) {
     try {
       const mailOptions = {
         from: process.env.EMAIL_FROM || 'noreply@kosmicowellness.com',
         to: email,
-        subject: 'Kosmico Wellness - Verify Your Email',
+        subject: subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2d5a27;">Welcome to Kosmico Wellness</h2>
+            <h2 style="color: #2d5a27;">${title}</h2>
             <p>Your verification code is:</p>
             <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
               ${otp}

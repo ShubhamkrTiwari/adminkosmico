@@ -23,16 +23,30 @@ class _PaymentsTabState extends State<PaymentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Transactions', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-          Text('Monitor all payments and revenue flow', style: TextStyle(color: AppColors.textLight)),
-          const SizedBox(height: 32),
-          Expanded(child: _buildPaymentList()),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.primary.withOpacity(0.15),
+            const Color(0xFFF4F7F4),
+            Colors.white,
+          ],
+          stops: const [0.0, 0.4, 1.0],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Transactions', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('Monitor all payments and revenue flow', style: TextStyle(color: AppColors.textLight)),
+            const SizedBox(height: 32),
+            Expanded(child: _buildPaymentList()),
+          ],
+        ),
       ),
     );
   }

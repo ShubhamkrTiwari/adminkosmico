@@ -48,105 +48,139 @@ class _OverviewTabState extends State<OverviewTab> {
         return RefreshIndicator(
           onRefresh: _loadData,
           color: AppColors.primary,
-          child: Material(
-            color: const Color(0xFFF8FAF8), 
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Dashboard',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                            ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary.withOpacity(0.15),
+                  const Color(0xFFF4F7F4),
+                  Colors.white,
+                ],
+                stops: const [0.0, 0.4, 1.0],
+              ),
+            ),
+            child: CustomScrollView(
+              slivers: [
+                // Modern App Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Dashboard Overview',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textDark,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: AppColors.textLight,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            DateFormat('EEEE, MMM dd').format(DateTime.now()),
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: AppColors.textLight,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
-                        child: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 20),
-                      ),
-                    ],
+                        ),
+                        _buildHeaderAction(Icons.notifications_none_rounded, () {}),
+                        const SizedBox(width: 12),
+                        _buildHeaderAction(Icons.search_rounded, () {}),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  
-                  // Compact 2-column grid for Stats
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.4,
-                    children: [
+                ),
+
+                // KPI Stats Grid
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1.4,
+                    ),
+                    delegate: SliverChildListDelegate([
                       StatCard(
-                        title: 'Revenue',
+                        title: 'Total Revenue',
                         value: currencyFormat.format(stats?['totalRevenue'] ?? 0),
                         icon: Icons.account_balance_wallet_rounded,
-                        color: Colors.green,
-                        trend: '+12%',
+                        color: const Color(0xFF2E7D32),
+                        trend: '+12.5%',
                       ),
                       StatCard(
-                        title: 'Orders',
+                        title: 'Total Orders',
                         value: (stats?['totalOrders'] ?? 0).toString(),
-                        icon: Icons.shopping_basket_rounded,
-                        color: Colors.blue,
-                        trend: '+5%',
+                        icon: Icons.local_mall_rounded,
+                        color: const Color(0xFF1565C0),
+                        trend: '+8.2%',
                       ),
                       StatCard(
                         title: 'Customers',
                         value: (stats?['totalUsers'] ?? 0).toString(),
-                        icon: Icons.people_alt_rounded,
-                        color: Colors.orange,
+                        icon: Icons.group_rounded,
+                        color: const Color(0xFFE65100),
                       ),
                       StatCard(
-                        title: 'Alerts',
+                        title: 'Notifications',
                         value: (stats?['totalNotifications'] ?? 0).toString(),
-                        icon: Icons.notifications_active_rounded,
-                        color: Colors.purple,
+                        icon: Icons.campaign_rounded,
+                        color: const Color(0xFF6A1B9A),
                       ),
-                    ],
+                    ]),
                   ),
-                  
-                  const SizedBox(height: 24),
-                  _buildSectionHeader('Sales Overview'),
-                  const SizedBox(height: 16),
-                  _buildSalesChart(context, salesData),
-                  
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(child: _buildSectionHeader('Stock Alerts')),
-                      TextButton(onPressed: () {}, child: const Text('View All')),
-                    ],
+                ),
+
+                // Sales Chart
+                SliverToBoxAdapter(
+                  child: _buildSectionWrapper(
+                    title: 'Revenue Analytics',
+                    child: _buildSalesChart(context, salesData),
                   ),
-                  _buildInventoryAlerts(context, lowStock),
-                  
-                  const SizedBox(height: 24),
-                  _buildSectionHeader('Recent Activity'),
-                  const SizedBox(height: 16),
-                  _buildRecentOrdersSection(context, recentOrders),
-                  const SizedBox(height: 20),
-                ],
-              ),
+                ),
+
+                // Inventory & Recent Activity
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth > 800) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 2, child: _buildActivityList(recentOrders)),
+                              const SizedBox(width: 24),
+                              Expanded(child: _buildStockAlerts(lowStock)),
+                            ],
+                          );
+                        } else {
+                          return Column(
+                            children: [
+                              _buildStockAlerts(lowStock),
+                              const SizedBox(height: 24),
+                              _buildActivityList(recentOrders),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
             ),
           ),
         );
@@ -154,32 +188,31 @@ class _OverviewTabState extends State<OverviewTab> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textDark,
+  Widget _buildHeaderAction(IconData icon, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: AppColors.textDark, size: 22),
+        onPressed: onTap,
       ),
     );
   }
 
-  Widget _buildResponsiveGrid(BuildContext context, List<Widget> children) {
-    double width = MediaQuery.of(context).size.width;
-    int crossAxisCount = width > 1200 ? 4 : (width > 600 ? 2 : 1);
-    
-    // Adjusting aspect ratio to make cards less tall on mobile
-    double aspectRatio = width > 1200 ? 1.6 : (width > 800 ? 1.8 : 2.2);
-    
-    return GridView.count(
-      crossAxisCount: crossAxisCount,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: aspectRatio,
-      children: children,
+  Widget _buildSectionWrapper({required String title, required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
     );
   }
 
@@ -188,18 +221,24 @@ class _OverviewTabState extends State<OverviewTab> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Sales Growth', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Row(
+            children: [
+              const Icon(Icons.show_chart_rounded, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text('Monthly Growth', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.textLight)),
+            ],
+          ),
           const SizedBox(height: 32),
           SizedBox(
-            height: 300,
+            height: 250,
             child: salesData.isEmpty 
-              ? const Center(child: Text('No sales data available'))
+              ? const Center(child: Text('No data available'))
               : LineChart(
                   LineChartData(
                     gridData: const FlGridData(show: false),
@@ -207,16 +246,19 @@ class _OverviewTabState extends State<OverviewTab> {
                     borderData: FlBorderData(show: false),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: salesData.asMap().entries.map((e) {
-                          return FlSpot(e.key.toDouble(), (e.value['total'] as num).toDouble());
-                        }).toList(),
+                        spots: salesData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (e.value['total'] as num).toDouble())).toList(),
                         isCurved: true,
                         color: AppColors.primary,
-                        barWidth: 4,
+                        barWidth: 6,
+                        isStrokeCapRound: true,
                         dotData: const FlDotData(show: false),
                         belowBarData: BarAreaData(
                           show: true,
-                          color: AppColors.primary.withOpacity(0.1),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [AppColors.primary.withOpacity(0.2), AppColors.primary.withOpacity(0)],
+                          ),
                         ),
                       ),
                     ],
@@ -228,42 +270,13 @@ class _OverviewTabState extends State<OverviewTab> {
     );
   }
 
-  Widget _buildInventoryAlerts(BuildContext context, List items) {
+  Widget _buildActivityList(List orders) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Low Stock Alerts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const SizedBox(height: 16),
-          if (items.isEmpty)
-            const Center(child: Text('No inventory issues', style: TextStyle(color: Colors.grey)))
-          else
-            ...items.take(5).map((item) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(item['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
-              trailing: Text(
-                '${item['stock']} left',
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-              ),
-            )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentOrdersSection(BuildContext context, List orders) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,57 +284,76 @@ class _OverviewTabState extends State<OverviewTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Recent Activity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              TextButton(onPressed: () {}, child: const Text('View All Transactions')),
+              Text('Recent Orders', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
             ],
           ),
           const SizedBox(height: 16),
           if (orders.isEmpty)
             const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('No recent orders')))
           else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                horizontalMargin: 0,
-                columnSpacing: 40,
-                columns: const [
-                  DataColumn(label: Text('Customer')),
-                  DataColumn(label: Text('Amount')),
-                  DataColumn(label: Text('Status')),
-                  DataColumn(label: Text('Date')),
-                ],
-                rows: orders.take(10).map((order) {
-                  return DataRow(cells: [
-                    DataCell(Text(order['user']?['name'] ?? 'Guest')),
-                    DataCell(Text('₹${order['amount'] ?? order['total']}')),
-                    DataCell(_buildStatusBadge(order['orderStatus'] ?? order['status'])),
-                    DataCell(Text(DateFormat('MMM dd').format(DateTime.parse(order['createdAt'])))),
-                  ]);
-                }).toList(),
-              ),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: orders.take(5).length,
+              separatorBuilder: (_, __) => const Divider(height: 24),
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                return Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
+                      child: const Icon(Icons.shopping_bag_outlined, color: Colors.blue, size: 18),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(order['user']?['name'] ?? 'Guest', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(DateFormat('MMM dd').format(DateTime.parse(order['createdAt'])), style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Text('₹${order['amount'] ?? order['total']}', style: const TextStyle(fontWeight: FontWeight.w900)),
+                  ],
+                );
+              },
             ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    switch (status.toLowerCase()) {
-      case 'delivered': color = Colors.green; break;
-      case 'pending': color = Colors.orange; break;
-      case 'processing': color = Colors.blue; break;
-      default: color = Colors.grey;
-    }
+  Widget _buildStockAlerts(List items) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
       ),
-      child: Text(
-        status.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Stock Alerts', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 20),
+          if (items.isEmpty)
+            const Center(child: Text('All items in stock', style: TextStyle(color: Colors.grey, fontSize: 12)))
+          else
+            ...items.take(3).map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                  Text('${item['stock']} left', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12)),
+                ],
+              ),
+            )),
+        ],
       ),
     );
   }

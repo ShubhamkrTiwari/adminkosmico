@@ -257,4 +257,86 @@ router.get('/me', protect, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/admin/forgot-password - Send OTP for password reset
+router.post('/forgot-password', authLimiter, [
+  body('email').isEmail().withMessage('Valid email is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: 'Validation failed', errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const user = await User.findOne({ email, isAdmin: true });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Admin user not found' });
+    }
+
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.otp = { code: otp, expiresAt: otpExpiry };
+    await user.save();
+
+    await sendOTPEmail(email, otp, 'Kosmico Wellness - Password Reset OTP', 'Reset Your Password');
+
+    res.status(200).json({ success: true, message: 'Password reset OTP sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/admin/verify-otp - Verify OTP for password reset
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email, isAdmin: true });
+
+    if (!user || !user.otp || user.otp.code !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    if (new Date() > user.otp.expiresAt) {
+      return res.status(400).json({ success: false, message: 'OTP has expired' });
+    }
+
+    res.status(200).json({ success: true, message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/admin/reset-password - Verify OTP and reset password
+router.post('/reset-password', [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: 'Validation failed', errors: errors.array() });
+    }
+
+    const { email, newPassword } = req.body;
+    const user = await User.findOne({ email, isAdmin: true });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Admin user not found' });
+    }
+
+    user.password = newPassword;
+    user.otp = undefined;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;

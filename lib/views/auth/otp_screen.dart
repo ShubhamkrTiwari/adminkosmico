@@ -4,9 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../providers/auth_provider.dart';
 
+import 'reset_password_screen.dart';
+
 class OtpScreen extends StatefulWidget {
   final String email;
-  const OtpScreen({super.key, required this.email});
+  final bool isPasswordReset;
+  const OtpScreen({super.key, required this.email, this.isPasswordReset = false});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -19,6 +22,28 @@ class _OtpScreenState extends State<OtpScreen> {
   void _handleVerify() async {
     if (_formKey.currentState!.validate()) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
+      
+      if (widget.isPasswordReset) {
+        final success = await auth.verifyForgotPasswordOtp(widget.email, _otpController.text);
+        if (success && mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ResetPasswordScreen(email: widget.email, otp: _otpController.text),
+            ),
+          );
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(auth.error ?? 'Invalid OTP'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
       final success = await auth.verifyOtp(widget.email, _otpController.text);
 
       if (success && mounted) {

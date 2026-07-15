@@ -37,15 +37,29 @@ class _NotificationsTabState extends State<NotificationsTab> {
               label: const Text('Send New', style: TextStyle(color: Colors.white)),
             )
           : null,
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(isDesktop),
-            const SizedBox(height: 32),
-            Expanded(child: _buildNotificationHistory()),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withOpacity(0.15),
+              const Color(0xFFF4F7F4),
+              Colors.white,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(isDesktop),
+              const SizedBox(height: 32),
+              Expanded(child: _buildNotificationHistory()),
+            ],
+          ),
         ),
       ),
     );

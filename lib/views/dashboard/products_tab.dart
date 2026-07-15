@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
@@ -39,19 +40,33 @@ class _ProductsTabState extends State<ProductsTab> {
               child: const Icon(Icons.add_rounded, color: Colors.white),
             )
           : null,
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(isDesktop),
-              const SizedBox(height: 32),
-              _buildFilters(),
-              const SizedBox(height: 24),
-              Expanded(child: _buildProductTable()),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withOpacity(0.15),
+              const Color(0xFFF4F7F4),
+              Colors.white,
             ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(isDesktop),
+                const SizedBox(height: 32),
+                _buildFilters(),
+                const SizedBox(height: 24),
+                Expanded(child: _buildProductTable()),
+              ],
+            ),
           ),
         ),
       ),
@@ -192,15 +207,29 @@ class _ProductsTabState extends State<ProductsTab> {
     return DataRow(cells: [
       DataCell(Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: p.image != null && p.image!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: p.image!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: AppColors.primary.withOpacity(0.05),
+                        child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: AppColors.primary.withOpacity(0.05),
+                        child: const Icon(Icons.broken_image_outlined, size: 20, color: AppColors.primary),
+                      ),
+                    )
+                  : Container(
+                      color: AppColors.primary.withOpacity(0.05),
+                      child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
+                    ),
             ),
-            child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -330,6 +359,7 @@ class _ProductDialogState extends State<ProductDialog> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   late TextEditingController _descController;
+  late TextEditingController _imageController;
   String? _selectedCategory;
 
   @override
@@ -339,7 +369,16 @@ class _ProductDialogState extends State<ProductDialog> {
     _priceController = TextEditingController(text: widget.product?.price.toString());
     _stockController = TextEditingController(text: widget.product?.stock.toString());
     _descController = TextEditingController(text: widget.product?.description);
+    _imageController = TextEditingController(text: widget.product?.image);
     _selectedCategory = widget.product?.categoryId;
+
+    // Ensure categories are loaded when dialog opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final catProvider = context.read<CategoryProvider>();
+      if (catProvider.categories.isEmpty) {
+        catProvider.fetchCategories();
+      }
+    });
   }
 
   @override
@@ -348,12 +387,14 @@ class _ProductDialogState extends State<ProductDialog> {
     _priceController.dispose();
     _stockController.dispose();
     _descController.dispose();
+    _imageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = context.watch<CategoryProvider>().categories;
+    final categoryProvider = context.watch<CategoryProvider>();
+    final categories = categoryProvider.categories;
 
     return AlertDialog(
       title: Text(widget.product == null ? 'New Product' : 'Edit Product'),
@@ -369,12 +410,56 @@ class _ProductDialogState extends State<ProductDialog> {
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                items: categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
-                onChanged: (v) => setState(() => _selectedCategory = v),
-                decoration: const InputDecoration(labelText: 'Category'),
-                validator: (v) => v == null ? 'Required' : null,
+              Consumer<CategoryProvider>(
+                builder: (context, catProvider, _) {
+                  final categories = catProvider.categories;
+                  
+                  if (catProvider.isLoading && categories.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(),
+                    );
+                  }
+
+                  if (categories.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Please create a category first in the "Categories" tab.',
+                              style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    value: categories.any((c) => c.id == _selectedCategory) ? _selectedCategory : null,
+                    items: categories.map((c) => DropdownMenuItem(
+                      value: c.id, 
+                      child: Text(c.name, style: const TextStyle(fontSize: 14))
+                    )).toList(),
+                    onChanged: (v) => setState(() => _selectedCategory = v),
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
+                      prefixIcon: Icon(Icons.category_outlined, size: 20),
+                    ),
+                    validator: (v) => v == null ? 'Required' : null,
+                    hint: const Text('Select a category'),
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Row(
@@ -400,6 +485,15 @@ class _ProductDialogState extends State<ProductDialog> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: _imageController,
+                decoration: const InputDecoration(
+                  labelText: 'Image URL',
+                  hintText: 'https://example.com/product.jpg',
+                  prefixIcon: Icon(Icons.image_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _descController,
                 decoration: const InputDecoration(labelText: 'Description'),
                 maxLines: 3,
@@ -420,6 +514,7 @@ class _ProductDialogState extends State<ProductDialog> {
                 'price': double.tryParse(_priceController.text) ?? 0.0,
                 'stock': int.tryParse(_stockController.text) ?? 0,
                 'description': _descController.text,
+                'image': _imageController.text,
                 'visibility': (widget.product?.isVisible ?? true) ? 'visible' : 'hidden',
               };
 

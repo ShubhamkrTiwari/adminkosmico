@@ -42,23 +42,40 @@ class _MaintenanceTabState extends State<MaintenanceTab> {
   Widget build(BuildContext context) {
     final isLoading = context.watch<MaintenanceProvider>().isLoading;
 
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('System Maintenance', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-              Text('Control app accessibility and maintenance state', style: TextStyle(color: AppColors.textLight)),
-              const SizedBox(height: 32),
-              _buildMaintenanceCard(),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withOpacity(0.15),
+              const Color(0xFFF4F7F4),
+              Colors.white,
             ],
+            stops: const [0.0, 0.4, 1.0],
           ),
         ),
-        if (isLoading && !_isInitialized)
-          const Center(child: CircularProgressIndicator()),
-      ],
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('System Maintenance', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text('Control app accessibility and maintenance state', style: TextStyle(color: AppColors.textLight)),
+                  const SizedBox(height: 32),
+                  _buildMaintenanceCard(),
+                ],
+              ),
+            ),
+            if (isLoading && !_isInitialized)
+              const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      ),
     );
   }
 
@@ -119,7 +136,7 @@ class _MaintenanceTabState extends State<MaintenanceTab> {
                   Switch.adaptive(
                     value: provider.isMaintenanceMode,
                     activeColor: AppColors.primary,
-                    onChanged: provider.isLoading ? null : (value) => _showConfirmToggle(value),
+                    onChanged: (value) => _showConfirmToggle(value),
                   ),
                 ],
               ),
@@ -188,7 +205,16 @@ class _MaintenanceTabState extends State<MaintenanceTab> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await context.read<MaintenanceProvider>().toggleMaintenanceMode(newValue, _messageController.text);
+              final success = await context.read<MaintenanceProvider>().toggleMaintenanceMode(newValue, _messageController.text);
+              if (!success && mounted) {
+                final error = context.read<MaintenanceProvider>().error;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error ?? 'Failed to update maintenance mode'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: newValue ? Colors.red : AppColors.primary),
             child: Text(newValue ? 'Activate' : 'Deactivate'),

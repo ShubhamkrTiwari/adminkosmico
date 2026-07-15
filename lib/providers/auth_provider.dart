@@ -163,7 +163,88 @@ class AuthProvider extends ChangeNotifier {
         _error = data['message'] ?? 'Verification failed';
       }
     } catch (e) {
-      _error = 'Connection error';
+      _error = 'Connection error: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post('/forgot-password', {'email': email});
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data['message'] ?? 'Failed to send OTP';
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> verifyForgotPasswordOtp(String email, String otp) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post('/verify-otp', {
+        'email': email,
+        'otp': otp,
+      });
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data['message'] ?? 'OTP verification failed';
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> resetPassword(String email, String otp, String newPassword) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post('/reset-password', {
+        'email': email,
+        'newPassword': newPassword, // Updated field name to match backend
+      });
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _error = data['message'] ?? 'Reset failed';
+      }
+    } catch (e) {
+      _error = 'Connection error: $e';
     }
 
     _isLoading = false;

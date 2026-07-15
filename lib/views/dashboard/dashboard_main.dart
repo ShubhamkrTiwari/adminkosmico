@@ -75,7 +75,7 @@ class _DashboardMainState extends State<DashboardMain> {
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: const Color(0xFFF8FAF8),
+        backgroundColor: AppColors.primary.withOpacity(0.15),
         actions: [
           IconButton(
             icon: Icon(
@@ -111,50 +111,44 @@ class _DashboardMainState extends State<DashboardMain> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: AppColors.primary.withOpacity(0.08),
                     blurRadius: 20,
                     offset: const Offset(0, -5),
                   ),
                 ],
               ),
-              child: BottomNavigationBar(
-                currentIndex: _getBottomNavIndex(_selectedIndex),
-                onTap: (index) {
-                  if (index == 4) {
-                    _scaffoldKey.currentState?.openDrawer();
-                  } else {
-                    setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
-                  }
-                },
-                type: BottomNavigationBarType.fixed,
-                backgroundColor: Colors.white,
-                elevation: 0,
-                selectedItemColor: AppColors.primary,
-                unselectedItemColor: Colors.grey.shade400,
-                selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11),
-                unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 11),
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.grid_view_rounded)), 
-                    label: 'Overview',
+              child: ClipRRect(
+                child: BottomNavigationBar(
+                  currentIndex: _getBottomNavIndex(_selectedIndex),
+                  onTap: (index) {
+                    if (index == 4) {
+                      _scaffoldKey.currentState?.openDrawer();
+                    } else {
+                      setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
+                    }
+                  },
+                  type: BottomNavigationBarType.fixed,
+                  backgroundColor: Colors.white.withOpacity(0.95), // Slight transparency to blend
+                  elevation: 0,
+                  selectedItemColor: AppColors.primary,
+                  unselectedItemColor: Colors.grey.shade400,
+                  selectedLabelStyle: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold, 
+                    fontSize: 11,
+                    color: AppColors.primary,
                   ),
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.inventory_2_outlined)), 
-                    label: 'Products',
+                  unselectedLabelStyle: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w500, 
+                    fontSize: 11,
                   ),
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.shopping_bag_outlined)), 
-                    label: 'Orders',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.people_outline_rounded)), 
-                    label: 'Users',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.menu_rounded)), 
-                    label: 'More',
-                  ),
-                ],
+                  items: [
+                    _buildBottomNavItem(Icons.grid_view_rounded, 'Overview', 0),
+                    _buildBottomNavItem(Icons.inventory_2_outlined, 'Products', 1),
+                    _buildBottomNavItem(Icons.shopping_bag_outlined, 'Orders', 2),
+                    _buildBottomNavItem(Icons.people_outline_rounded, 'Users', 3),
+                    _buildBottomNavItem(Icons.menu_rounded, 'More', 4),
+                  ],
+                ),
               ),
             )
           : null,
@@ -192,4 +186,20 @@ class _DashboardMainState extends State<DashboardMain> {
   void _showProductDialog(BuildContext context) {}
 
   void _showCategoryDialog(BuildContext context) {}
+
+  BottomNavigationBarItem _buildBottomNavItem(IconData icon, String label, int index) {
+    final isSelected = _getBottomNavIndex(_selectedIndex) == index;
+    return BottomNavigationBarItem(
+      icon: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Icon(icon),
+      ),
+      label: label,
+    );
+  }
 }

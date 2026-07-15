@@ -34,17 +34,31 @@ class _CategoriesTabState extends State<CategoriesTab> {
               child: const Icon(Icons.add_rounded, color: Colors.white),
             )
           : null,
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(isDesktop),
-              const SizedBox(height: 32),
-              Expanded(child: _buildCategoryGrid()),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withOpacity(0.15),
+              const Color(0xFFF4F7F4),
+              Colors.white,
             ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(isDesktop),
+                const SizedBox(height: 32),
+                Expanded(child: _buildCategoryGrid()),
+              ],
+            ),
           ),
         ),
       ),
@@ -274,15 +288,11 @@ class CategoryDialog extends StatefulWidget {
 class _CategoryDialogState extends State<CategoryDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _slugController;
-  late TextEditingController _descController;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.category?.name);
-    _slugController = TextEditingController(text: widget.category?.slug);
-    _descController = TextEditingController(text: widget.category?.description);
   }
 
   @override
@@ -298,23 +308,6 @@ class _CategoryDialogState extends State<CategoryDialog> {
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Category Name', hintText: 'e.g., Ayurvedic Herbs'),
               validator: (v) => v!.isEmpty ? 'Required' : null,
-              onChanged: (v) {
-                if (widget.category == null) {
-                  _slugController.text = v.toLowerCase().replaceAll(' ', '-');
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _slugController,
-              decoration: const InputDecoration(labelText: 'Slug (URL path)'),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descController,
-              decoration: const InputDecoration(labelText: 'Description (Optional)'),
-              maxLines: 2,
             ),
           ],
         ),
@@ -324,10 +317,10 @@ class _CategoryDialogState extends State<CategoryDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
+              final slug = _nameController.text.toLowerCase().replaceAll(' ', '-');
               final data = {
                 'name': _nameController.text,
-                'slug': _slugController.text,
-                'description': _descController.text,
+                'slug': widget.category?.slug ?? slug,
               };
               
               bool success;

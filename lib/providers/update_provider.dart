@@ -27,15 +27,23 @@ class UpdateProvider extends ChangeNotifier {
   }
 
   Future<bool> createUpdate(Map<String, dynamic> data) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       final response = await _apiClient.post('/updates', data);
-      if (response.statusCode == 201) {
-        fetchUpdates();
+      debugPrint('Publish Update Response: ${response.statusCode} - ${response.body}');
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        await fetchUpdates();
+        _isLoading = false;
+        notifyListeners();
         return true;
       }
     } catch (e) {
       debugPrint('Error creating update: $e');
     }
+    _isLoading = false;
+    notifyListeners();
     return false;
   }
 }
