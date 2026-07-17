@@ -29,9 +29,9 @@ class Product {
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      stock: json['stock'] as int? ?? 0,
+      stock: json['countInStock'] ?? (json['stock'] as int? ?? 0), // API uses 'countInStock'
       categoryId: json['category'] is Map ? json['category']['_id'] : (json['category'] ?? ''),
-      categoryName: json['category'] is Map ? json['category']['name'] : null,
+      categoryName: json['category'] is Map ? json['category']['name'] : (json['category'] ?? 'General'),
       image: json['image'],
       isVisible: json['visibility'] == 'visible',
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
@@ -43,7 +43,7 @@ class Product {
       'name': name,
       'description': description,
       'price': price,
-      'stock': stock,
+      'countInStock': stock, // API uses 'countInStock'
       'category': categoryId,
       'image': image,
       'visibility': isVisible ? 'visible' : 'hidden',

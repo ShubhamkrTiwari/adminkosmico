@@ -37,8 +37,9 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> addProduct(Map<String, dynamic> productData) async {
     try {
-      final response = await _apiClient.post('/products', productData);
-      if (response.statusCode == 201) {
+      final response = await _apiClient.post('/products/admin/add-product', productData);
+      debugPrint('Add Product Response: ${response.statusCode} - ${response.body}');
+      if (response.statusCode == 201 || response.statusCode == 200) {
         fetchProducts();
         return true;
       }

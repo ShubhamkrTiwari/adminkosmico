@@ -111,58 +111,61 @@ class _UpdatesTabState extends State<UpdatesTab> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
           ),
-          child: ListView.separated(
-            padding: const EdgeInsets.all(8),
-            itemCount: provider.updates.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
-            itemBuilder: (context, index) {
-              final update = provider.updates[index];
-              final isMaintenance = update['type'] == 'maintenance';
-              
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: (isMaintenance ? Colors.orange : AppColors.primary).withOpacity(0.1),
-                  child: Icon(
-                    isMaintenance ? Icons.engineering_rounded : Icons.system_update_rounded, 
-                    color: isMaintenance ? Colors.orange : AppColors.primary, 
-                    size: 20
-                  ),
-                ),
-                title: Row(
-                  children: [
-                    Text(update['title'] ?? 'Update', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 8),
-                    Text('v${update['version']}', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(update['releaseNotes'] ?? update['notes'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('MMM dd, yyyy').format(DateTime.parse(update['createdAt'])),
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-                    ),
-                  ],
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (isMaintenance ? Colors.red : Colors.blue).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    (update['type'] ?? 'Feature').toString().toUpperCase(),
-                    style: TextStyle(
-                      color: isMaintenance ? Colors.red : Colors.blue, 
-                      fontSize: 10, 
-                      fontWeight: FontWeight.bold
+          child: Material(
+            color: Colors.transparent,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(8),
+              itemCount: provider.updates.length,
+              separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
+              itemBuilder: (context, index) {
+                final update = provider.updates[index];
+                final isMaintenance = update['type'] == 'maintenance';
+                
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: (isMaintenance ? Colors.orange : AppColors.primary).withOpacity(0.1),
+                    child: Icon(
+                      isMaintenance ? Icons.engineering_rounded : Icons.system_update_rounded, 
+                      color: isMaintenance ? Colors.orange : AppColors.primary, 
+                      size: 20
                     ),
                   ),
-                ),
-              );
-            },
+                  title: Row(
+                    children: [
+                      Text(update['title'] ?? 'Update', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      Text('v${update['version']}', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(update['releaseNotes'] ?? update['notes'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(DateTime.parse(update['createdAt'])),
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                      ),
+                    ],
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (isMaintenance ? Colors.red : Colors.blue).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      (update['type'] ?? 'Feature').toString().toUpperCase(),
+                      style: TextStyle(
+                        color: isMaintenance ? Colors.red : Colors.blue, 
+                        fontSize: 10, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         );
       },

@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as parser;
+import 'package:html/dom.dart' as dom;
+import '../../core/api_client.dart'; // Add this line
 import '../../core/constants.dart';
 import '../../models/product.dart';
 import '../../providers/product_provider.dart';
@@ -355,12 +360,15 @@ class ProductDialog extends StatefulWidget {
 
 class _ProductDialogState extends State<ProductDialog> {
   final _formKey = GlobalKey<FormState>();
+  final ApiClient _apiClient = ApiClient(); // Add this line
   late TextEditingController _nameController;
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   late TextEditingController _descController;
   late TextEditingController _imageController;
+  final TextEditingController _productLinkController = TextEditingController();
   String? _selectedCategory;
+  bool _isFetching = false;
 
   @override
   void initState() {
@@ -388,6 +396,7 @@ class _ProductDialogState extends State<ProductDialog> {
     _stockController.dispose();
     _descController.dispose();
     _imageController.dispose();
+    _productLinkController.dispose();
     super.dispose();
   }
 
@@ -429,15 +438,23 @@ class _ProductDialogState extends State<ProductDialog> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.orange.withOpacity(0.2)),
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Please create a category first in the "Categories" tab.',
-                              style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
-                            ),
+                          Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Please create a category first.',
+                                  style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                                onPressed: () => context.read<CategoryProvider>().fetchCategories(),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -482,6 +499,29 @@ class _ProductDialogState extends State<ProductDialog> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _productLinkController,
+                decoration: InputDecoration(
+                  labelText: 'Product Link',
+                  hintText: 'https://example.com/product',
+                  prefixIcon: const Icon(Icons.link_outlined),
+                  suffixIcon: _isFetching
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.cloud_download_outlined),
+                          onPressed: _fetchProductData,
+                          tooltip: 'Fetch product data from link',
+                        ),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -534,5 +574,132 @@ class _ProductDialogState extends State<ProductDialog> {
         ),
       ],
     );
+  }
+
+  Future<void> _fetchProductData() async {
+    final url = _productLinkController.text.trim();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a product link')),
+      );
+      return;
+    }
+
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid URL')),
+      );
+      return;
+    }
+
+    setState(() => _isFetching = true);
+
+    try {
+      final client = ApiClient(); // Use a local instance to be safe
+      final response = await client.post('/products/admin/extract-url', {
+        'productUrl': url, // Updated key from 'url' to 'productUrl'
+      });
+      
+      debugPrint('Extract URL Status: ${response.statusCode}');
+      debugPrint('Extract URL Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final productData = data['data'] ?? data;
+        
+        if (mounted) {
+          setState(() {
+            if (productData['name'] != null) {
+              _nameController.text = productData['name'];
+            }
+            if (productData['description'] != null) {
+              _descController.text = productData['description'];
+            }
+            if (productData['image'] != null) {
+              _imageController.text = productData['image'];
+            }
+            if (productData['price'] != null) {
+              _priceController.text = productData['price'].toString();
+            }
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Product data fetched from server!'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Server extraction failed: $e. Falling back to local fetch...')),
+        );
+        // Fallback to local scraping if server fails
+        _fetchProductDataLocal(url);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isFetching = false);
+      }
+    }
+  }
+
+  Future<void> _fetchProductDataLocal(String url) async {
+    setState(() => _isFetching = true);
+    try {
+      // Existing proxy logic as fallback
+      final proxyUrl = 'https://api.allorigins.win/get?url=${Uri.encodeComponent(url)}';
+      final response = await http.get(Uri.parse(proxyUrl)).timeout(const Duration(seconds: 20));
+      
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final htmlContent = jsonResponse['contents'];
+        final document = parser.parse(htmlContent);
+        
+        String? productName = _extractMetaContent(document, ['og:title', 'twitter:title', 'product:name', 'name']);
+        if (productName == null || productName.isEmpty) productName = document.querySelector('title')?.text.trim();
+
+        String? description = _extractMetaContent(document, ['og:description', 'twitter:description', 'description', 'product:description']);
+        String? image = _extractMetaContent(document, ['og:image', 'twitter:image', 'product:image', 'image']);
+        String? price = _extractMetaContent(document, ['product:price:amount', 'price', 'og:price:amount']);
+
+        if (mounted) {
+          setState(() {
+            if (productName != null) _nameController.text = productName;
+            if (description != null) _descController.text = description;
+            if (image != null) _imageController.text = image;
+            if (price != null) _priceController.text = price;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Local fetch also failed: $e');
+    } finally {
+      if (mounted) setState(() => _isFetching = false);
+    }
+  }
+
+  String? _extractMetaContent(dom.Document document, List<String> properties) {
+    for (final prop in properties) {
+      // Try og:property
+      final meta = document.querySelector('meta[property="$prop"]');
+      if (meta != null) {
+        final content = meta.attributes['content'];
+        if (content != null && content.isNotEmpty) {
+          return content.trim();
+        }
+      }
+      // Try name=property
+      final metaName = document.querySelector('meta[name="$prop"]');
+      if (metaName != null) {
+        final content = metaName.attributes['content'];
+        if (content != null && content.isNotEmpty) {
+          return content.trim();
+        }
+      }
+    }
+    return null;
   }
 }

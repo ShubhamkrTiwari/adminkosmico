@@ -113,84 +113,87 @@ class _NotificationsTabState extends State<NotificationsTab> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
           ),
-          child: ListView.separated(
-            padding: const EdgeInsets.all(8),
-            itemCount: provider.notifications.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
-            itemBuilder: (context, index) {
-              final n = provider.notifications[index];
-              final notificationId = n['_id']?.toString() ?? '';
+          child: Material(
+            color: Colors.transparent,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(8),
+              itemCount: provider.notifications.length,
+              separatorBuilder: (context, index) => const Divider(height: 1, indent: 70),
+              itemBuilder: (context, index) {
+                final n = provider.notifications[index];
+                final notificationId = n['_id']?.toString() ?? '';
 
-              return Dismissible(
-                key: Key(notificationId),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  color: Colors.redAccent,
-                  child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-                ),
-                confirmDismiss: (direction) async {
-                  return await _showDeleteConfirm(n);
-                },
-                onDismissed: (direction) {
-                  provider.deleteNotification(notificationId);
-                },
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: const Icon(Icons.campaign_rounded, color: AppColors.primary, size: 20),
+                return Dismissible(
+                  key: Key(notificationId),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    color: Colors.redAccent,
+                    child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
                   ),
-                  title: Text(n['title'] ?? 'No Title', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(n['message'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('MMM dd, hh:mm a').format(DateTime.parse(n['createdAt'])),
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-                      ),
-                    ],
-                  ),
-                  trailing: Consumer<UserProvider>(
-                    builder: (context, userProvider, _) {
-                      final targetId = (n['audience'] ?? n['user'] ?? '').toString();
-                      String displayName = targetId.toUpperCase();
-                      
-                      if (targetId == 'all') {
-                        displayName = 'ALL USERS';
-                      } else if (targetId == 'active') {
-                        displayName = 'ACTIVE ONLY';
-                      } else {
-                        // Find user name from provider list
-                        final user = userProvider.users.firstWhere(
-                          (u) => u.id == targetId,
-                          orElse: () => User(id: '', name: '', email: '', accountStatus: '', isAdmin: false),
-                        );
-                        if (user.name.isNotEmpty) {
-                          displayName = user.name.toUpperCase();
-                        } else if (targetId.length > 8) {
-                          displayName = 'USER: ${targetId.substring(targetId.length - 6).toUpperCase()}';
+                  confirmDismiss: (direction) async {
+                    return await _showDeleteConfirm(n);
+                  },
+                  onDismissed: (direction) {
+                    provider.deleteNotification(notificationId);
+                  },
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      child: const Icon(Icons.campaign_rounded, color: AppColors.primary, size: 20),
+                    ),
+                    title: Text(n['title'] ?? 'No Title', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(n['message'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('MMM dd, hh:mm a').format(DateTime.parse(n['createdAt'])),
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                        ),
+                      ],
+                    ),
+                    trailing: Consumer<UserProvider>(
+                      builder: (context, userProvider, _) {
+                        final targetId = (n['audience'] ?? n['user'] ?? '').toString();
+                        String displayName = targetId.toUpperCase();
+                        
+                        if (targetId == 'all') {
+                          displayName = 'ALL USERS';
+                        } else if (targetId == 'active') {
+                          displayName = 'ACTIVE ONLY';
+                        } else {
+                          // Find user name from provider list
+                          final user = userProvider.users.firstWhere(
+                            (u) => u.id == targetId,
+                            orElse: () => User(id: '', name: '', email: '', accountStatus: '', isAdmin: false),
+                          );
+                          if (user.name.isNotEmpty) {
+                            displayName = user.name.toUpperCase();
+                          } else if (targetId.length > 8) {
+                            displayName = 'USER: ${targetId.substring(targetId.length - 6).toUpperCase()}';
+                          }
                         }
-                      }
 
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          displayName,
-                          style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      );
-                    },
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            displayName,
+                            style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },

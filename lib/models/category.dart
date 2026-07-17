@@ -18,11 +18,11 @@ class Category {
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
       id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      slug: json['slug'] ?? '',
+      name: json['name'] ?? 'General',
+      slug: json['slug'] ?? (json['name'] ?? '').toString().toLowerCase().replaceAll(' ', '-'),
       description: json['description'],
       icon: json['icon'],
-      isVisible: json['visibility'] ?? true,
+      isVisible: json['visibility'] == 'visible' || json['visibility'] == true,
     );
   }
 }

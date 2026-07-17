@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import 'user_provider.dart';
 import 'order_provider.dart';
 import 'notification_provider.dart';
+import 'category_provider.dart';
 
 class DashboardProvider extends ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
@@ -39,6 +40,9 @@ class DashboardProvider extends ChangeNotifier {
           }
           if (_data!['notifications'] != null) {
             context.read<NotificationProvider>().setNotificationsFromDashboard(_data!['notifications']);
+          }
+          if (_data!['categories'] != null) {
+            context.read<CategoryProvider>().setCategoriesFromDashboard(_data!['categories']);
           }
         }
       } else {

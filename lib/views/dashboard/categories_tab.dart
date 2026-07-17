@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../models/category.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/dashboard_provider.dart';
 
 class CategoriesTab extends StatefulWidget {
   const CategoriesTab({super.key});
@@ -17,8 +18,24 @@ class _CategoriesTabState extends State<CategoriesTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CategoryProvider>().fetchCategories();
+      _loadData();
     });
+  }
+
+  Future<void> _loadData() async {
+    final catProvider = context.read<CategoryProvider>();
+    final dashProvider = context.read<DashboardProvider>();
+    
+    // Refresh both to be safe
+    await catProvider.fetchCategories();
+    await dashProvider.fetchDashboardData(context);
+    
+    // If list is still empty, manually check dashboard data
+    if (mounted && catProvider.categories.isEmpty) {
+      if (dashProvider.data != null && dashProvider.data!['categories'] != null) {
+        catProvider.setCategoriesFromDashboard(dashProvider.data!['categories']);
+      }
+    }
   }
 
   @override
@@ -115,8 +132,27 @@ class _CategoriesTabState extends State<CategoriesTab> {
   Widget _buildCategoryGrid() {
     return Consumer<CategoryProvider>(
       builder: (context, provider, _) {
-        if (provider.isLoading) return const Center(child: CircularProgressIndicator());
-        if (provider.categories.isEmpty) return const Center(child: Text('No categories found'));
+        if (provider.isLoading && provider.categories.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (provider.categories.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.category_outlined, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                const Text('No categories found', style: TextStyle(color: Colors.grey)),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _loadData,
+                  child: const Text('Refresh'),
+                )
+              ],
+            ),
+          );
+        }
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -306,7 +342,11 @@ class _CategoryDialogState extends State<CategoryDialog> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Category Name', hintText: 'e.g., Ayurvedic Herbs'),
+              decoration: const InputDecoration(
+                labelText: 'Category Name', 
+                hintText: 'e.g., Supplements',
+                prefixIcon: Icon(Icons.category_outlined),
+              ),
               validator: (v) => v!.isEmpty ? 'Required' : null,
             ),
           ],
@@ -317,10 +357,8 @@ class _CategoryDialogState extends State<CategoryDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              final slug = _nameController.text.toLowerCase().replaceAll(' ', '-');
               final data = {
-                'name': _nameController.text,
-                'slug': widget.category?.slug ?? slug,
+                'name': _nameController.text.trim(),
               };
               
               bool success;
