@@ -20,14 +20,38 @@ class ProductProvider extends ChangeNotifier {
 
     try {
       final response = await _apiClient.get('/products');
+      debugPrint('FETCH PRODUCTS RAW: ${response.body}');
+      
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        final List list = result['products'] ?? result['data']?['products'] ?? result['data'] ?? [];
-        _products = list.map((item) => Product.fromJson(item)).toList();
+        debugPrint('PARSING PRODUCTS...');
+        
+        List? list;
+        if (result is List) {
+          list = result;
+        } else if (result is Map) {
+          // Check for products in the priority order
+          if (result['data'] is Map && result['data']['products'] is List) {
+            list = result['data']['products'];
+          } else if (result['products'] is List) {
+            list = result['products'];
+          } else if (result['data'] is List) {
+            list = result['data'];
+          }
+        }
+
+        if (list != null) {
+          _products = list.map((item) => Product.fromJson(item)).toList();
+          debugPrint('SUCCESS: Parsed ${_products.length} products');
+        } else {
+          debugPrint('FAILED: No list found in product response. Structure: ${result.keys}');
+          _products = [];
+        }
       } else {
-        _error = 'Failed to load products';
+        _error = 'Failed to load products: ${response.statusCode}';
       }
     } catch (e) {
+      debugPrint('CRITICAL: Product fetch failed: $e');
       _error = 'Connection error';
     }
 
@@ -51,7 +75,8 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> updateProduct(String id, Map<String, dynamic> productData) async {
     try {
-      final response = await _apiClient.put('/products/$id', productData);
+      final response = await _apiClient.put('/products/admin/update-product/$id', productData);
+      debugPrint('Update Product Response: ${response.statusCode} - ${response.body}');
       if (response.statusCode == 200) {
         fetchProducts();
         return true;
@@ -64,7 +89,7 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> deleteProduct(String id) async {
     try {
-      final response = await _apiClient.delete('/products/$id');
+      final response = await _apiClient.delete('/products/admin/delete-product/$id');
       if (response.statusCode == 200) {
         _products.removeWhere((p) => p.id == id);
         notifyListeners();
@@ -78,12 +103,16 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> toggleVisibility(String id, bool visible) async {
     try {
-      final response = await _apiClient.patch('/products/$id/visibility', {});
+      // Send the requested visibility state to ensure sync
+      final response = await _apiClient.patch('/products/admin/toggle-visibility/$id', {'visibility': visible});
+      debugPrint('Toggle Visibility Response: ${response.statusCode} - ${response.body}');
+      
       if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
         final index = _products.indexWhere((p) => p.id == id);
         if (index != -1) {
-          final updatedProduct = Product.fromJson(jsonDecode(response.body)['data']['product']);
-          _products[index] = updatedProduct;
+          // Use the data returned from server to update local state
+          _products[index] = Product.fromJson(result['data']['product']);
           notifyListeners();
           return true;
         }

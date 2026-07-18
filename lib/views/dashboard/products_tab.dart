@@ -170,41 +170,192 @@ class _ProductsTabState extends State<ProductsTab> {
   Widget _buildProductTable() {
     return Consumer<ProductProvider>(
       builder: (context, provider, _) {
-        if (provider.isLoading) return const Center(child: CircularProgressIndicator());
+        if (provider.isLoading && provider.products.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        final filteredProducts = provider.products.where((p) {
+        final products = provider.products;
+        final filteredProducts = products.where((p) {
           final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase());
           final matchesCategory = _selectedCategoryId == null || p.categoryId == _selectedCategoryId;
           return matchesSearch && matchesCategory;
         }).toList();
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                horizontalMargin: 24,
-                columnSpacing: 24,
-                columns: const [
-                  DataColumn(label: Text('Product')),
-                  DataColumn(label: Text('Category')),
-                  DataColumn(label: Text('Price')),
-                  DataColumn(label: Text('Stock')),
-                  DataColumn(label: Text('Visibility')),
-                  DataColumn(label: Text('Actions')),
+        if (products.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('No products found', style: TextStyle(color: Colors.black54, fontSize: 16)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => provider.fetchProducts(),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Refresh Products'),
+                )
+              ],
+            ),
+          );
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 900) {
+              // Desktop View: Table
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: DataTable(
+                      horizontalMargin: 24,
+                      columnSpacing: 24,
+                      columns: const [
+                        DataColumn(label: Text('Product')),
+                        DataColumn(label: Text('Category')),
+                        DataColumn(label: Text('Price')),
+                        DataColumn(label: Text('Stock')),
+                        DataColumn(label: Text('Visibility')),
+                        DataColumn(label: Text('Actions')),
+                      ],
+                      rows: filteredProducts.map((p) => _buildDataRow(p)).toList(),
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              // Mobile View: List of Cards
+              return ListView.builder(
+                itemCount: filteredProducts.length,
+                padding: const EdgeInsets.only(bottom: 100),
+                itemBuilder: (context, index) => _buildProductMobileCard(filteredProducts[index]),
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildProductMobileCard(Product p) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showProductDialog(product: p),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Product Image
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: p.image != null && p.image!.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: p.image!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(color: AppColors.primary.withOpacity(0.05)),
+                              errorWidget: (context, url, error) => const Icon(Icons.broken_image_outlined),
+                            )
+                          : Container(
+                              color: AppColors.primary.withOpacity(0.05),
+                              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                p.categoryName ?? 'General',
+                                style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(p.isVisible ? 'On' : 'Off', style: TextStyle(fontSize: 10, color: p.isVisible ? AppColors.primary : Colors.grey)),
+                                Switch.adaptive(
+                                  value: p.isVisible,
+                                  onChanged: (val) => context.read<ProductProvider>().toggleVisibility(p.id, val),
+                                  activeColor: AppColors.primary,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          p.name,
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '₹${p.price.toStringAsFixed(0)}',
+                              style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: (p.stock < 10 ? Colors.red : Colors.green).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Stock: ${p.stock}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: p.stock < 10 ? Colors.red : Colors.green,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-                rows: filteredProducts.map((p) => _buildDataRow(p)).toList(),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -249,7 +400,7 @@ class _ProductsTabState extends State<ProductsTab> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'ID: ${p.id.substring(p.id.length - 6).toUpperCase()}',
+                  'ID: ${p.id.substring(p.id.length > 6 ? p.id.length - 6 : 0).toUpperCase()}',
                   style: TextStyle(color: AppColors.textLight, fontSize: 10),
                 ),
               ],
@@ -284,10 +435,16 @@ class _ProductsTabState extends State<ProductsTab> {
           ),
         ),
       )),
-      DataCell(Switch.adaptive(
-        value: p.isVisible,
-        onChanged: (val) => context.read<ProductProvider>().toggleVisibility(p.id, val),
-        activeColor: AppColors.primary,
+      DataCell(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch.adaptive(
+            value: p.isVisible,
+            onChanged: (val) => context.read<ProductProvider>().toggleVisibility(p.id, val),
+            activeColor: AppColors.primary,
+          ),
+          Text(p.isVisible ? 'On' : 'Off', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: p.isVisible ? AppColors.primary : Colors.grey)),
+        ],
       )),
       DataCell(Row(
         children: [
@@ -360,7 +517,7 @@ class ProductDialog extends StatefulWidget {
 
 class _ProductDialogState extends State<ProductDialog> {
   final _formKey = GlobalKey<FormState>();
-  final ApiClient _apiClient = ApiClient(); // Add this line
+  final ApiClient _apiClient = ApiClient();
   late TextEditingController _nameController;
   late TextEditingController _priceController;
   late TextEditingController _stockController;
@@ -368,6 +525,7 @@ class _ProductDialogState extends State<ProductDialog> {
   late TextEditingController _imageController;
   final TextEditingController _productLinkController = TextEditingController();
   String? _selectedCategory;
+  bool _isVisible = true;
   bool _isFetching = false;
 
   @override
@@ -378,7 +536,9 @@ class _ProductDialogState extends State<ProductDialog> {
     _stockController = TextEditingController(text: widget.product?.stock.toString());
     _descController = TextEditingController(text: widget.product?.description);
     _imageController = TextEditingController(text: widget.product?.image);
+    _productLinkController.text = widget.product?.productLink ?? '';
     _selectedCategory = widget.product?.categoryId;
+    _isVisible = widget.product?.isVisible ?? true;
 
     // Ensure categories are loaded when dialog opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -446,14 +606,17 @@ class _ProductDialogState extends State<ProductDialog> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'Please create a category first.',
+                                  catProvider.isLoading ? 'Fetching categories...' : 'Please create a category first.',
                                   style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
-                                onPressed: () => context.read<CategoryProvider>().fetchCategories(),
-                              ),
+                              if (catProvider.isLoading)
+                                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              else
+                                IconButton(
+                                  icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                                  onPressed: () => context.read<CategoryProvider>().fetchCategories(),
+                                ),
                             ],
                           ),
                         ],
@@ -539,6 +702,15 @@ class _ProductDialogState extends State<ProductDialog> {
                 maxLines: 3,
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Visibility (On/Off)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                subtitle: Text(_isVisible ? 'Visible to customers' : 'Hidden from customers', style: const TextStyle(fontSize: 12)),
+                value: _isVisible,
+                onChanged: (v) => setState(() => _isVisible = v),
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+              ),
             ],
           ),
         ),
@@ -555,7 +727,8 @@ class _ProductDialogState extends State<ProductDialog> {
                 'stock': int.tryParse(_stockController.text) ?? 0,
                 'description': _descController.text,
                 'image': _imageController.text,
-                'visibility': (widget.product?.isVisible ?? true) ? 'visible' : 'hidden',
+                'productLink': _productLinkController.text,
+                'visibility': _isVisible,
               };
 
               bool success;

@@ -3,42 +3,68 @@ const { body, validationResult } = require('express-validator');
 const { protect, adminOnly } = require('../middleware/auth');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
+// Apply protection to all routes
 router.use(protect);
-router.use(adminOnly);
 
-// GET /api/admin/products - Get all products with pagination and search
+const findCategory = async (category) => {
+  if (!category) return null;
+  let categoryDoc = null;
+  try {
+    if (mongoose.Types.ObjectId.isValid(category)) {
+      categoryDoc = await Category.findById(category);
+    }
+    if (!categoryDoc) {
+      categoryDoc = await Category.findOne({
+        name: { $regex: new RegExp('^' + category + '$', 'i') }
+      });
+    }
+  } catch (err) {
+    console.error('Category find error:', err);
+  }
+  return categoryDoc;
+};
+
+// GET all products
 router.get('/', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 50;
     const search = req.query.search || '';
     const category = req.query.category || '';
-    const sortBy = req.query.sortBy || 'createdAt';
-    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
     const query = {};
+
+    // IMPORTANT: Admins see EVERYTHING (On & Off)
+    // Regular users ONLY see visible products (On)
+    if (!req.user.isAdmin) {
+      query.visibility = true;
+    }
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
     }
+
     if (category) {
-      query.category = category;
+      const catDoc = await findCategory(category);
+      if (catDoc) query.category = catDoc._id;
     }
 
     const products = await Product.find(query)
       .populate('category', 'name slug')
-      .sort({ [sortBy]: sortOrder })
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
     const total = await Product.countDocuments(query);
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: {
         products,
@@ -51,191 +77,116 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get products error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching products'
-    });
+    console.error('Fetch products error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching products' });
   }
 });
 
-// GET /api/admin/products/:id - Get single product
+// GET single product
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate('category');
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    // Non-admins shouldn't see hidden products
+    if (!req.user.isAdmin && !product.visibility) {
+      return res.status(403).json({ success: false, message: 'This product is currently unavailable' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: { product }
-    });
+    res.status(200).json({ success: true, data: { product } });
   } catch (error) {
-    console.error('Get product error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching product'
-    });
+    res.status(500).json({ success: false, message: 'Error fetching product' });
   }
 });
 
-// POST /api/admin/products - Create new product
-router.post('/', [
-  body('name').trim().notEmpty().withMessage('Product name is required'),
-  body('category').notEmpty().withMessage('Category is required'),
-  body('price').isNumeric().withMessage('Price must be a number'),
-  body('stock').isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
-  body('description').trim().notEmpty().withMessage('Description is required')
-], async (req, res) => {
+// Admin-only operations below
+router.use(adminOnly);
+
+// POST Add product
+router.post('/admin/add-product', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    const { name, category, price, stock, description, ingredients, visibility, image, images } = req.body;
-
-    // Verify category exists
-    const categoryExists = await Category.findById(category);
-    if (!categoryExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'Category not found'
-      });
-    }
+    const { name, category, price, stock, description, visibility, image, productLink } = req.body;
+    const categoryDoc = await findCategory(category);
+    if (!categoryDoc) return res.status(400).json({ success: false, message: 'Category not found' });
 
     const product = await Product.create({
       name,
-      category,
+      category: categoryDoc._id,
       price,
-      stock,
+      stock: stock || 0,
       description,
-      ingredients,
-      visibility: visibility || 'visible',
+      visibility: visibility === undefined ? true : (visibility === true || visibility === 'true' || visibility === 'visible'),
       image: image || '',
-      images: images || []
+      productLink: productLink || ''
     });
 
-    const populatedProduct = await Product.findById(product._id).populate('category');
-
-    res.status(201).json({
-      success: true,
-      message: 'Product created successfully',
-      data: { product: populatedProduct }
-    });
+    res.status(201).json({ success: true, data: { product } });
   } catch (error) {
-    console.error('Create product error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error creating product'
-    });
+    res.status(500).json({ success: false, message: 'Error creating product: ' + error.message });
   }
 });
 
-// PUT /api/admin/products/:id - Update product
-router.put('/:id', async (req, res) => {
+// PUT Update product
+router.put('/admin/update-product/:id', async (req, res) => {
   try {
+    const { name, category, price, stock, description, visibility, image, productLink } = req.body;
     const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
-    const { name, category, price, stock, description, ingredients, visibility, image, images } = req.body;
-
+    let categoryId = product.category;
     if (category) {
-      const categoryExists = await Category.findById(category);
-      if (!categoryExists) {
-        return res.status(400).json({
-          success: false,
-          message: 'Category not found'
-        });
-      }
+      const categoryDoc = await findCategory(category);
+      if (categoryDoc) categoryId = categoryDoc._id;
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(
+    const updated = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, category, price, stock, description, ingredients, visibility, image, images },
-      { new: true, runValidators: true }
+      {
+        name: name || product.name,
+        category: categoryId,
+        price: price !== undefined ? price : product.price,
+        stock: stock !== undefined ? stock : product.stock,
+        description: description || product.description,
+        visibility: visibility !== undefined ? (visibility === true || visibility === 'true' || visibility === 'visible') : product.visibility,
+        image: image || product.image,
+        productLink: productLink || product.productLink
+      },
+      { new: true }
     ).populate('category');
 
-    res.status(200).json({
-      success: true,
-      message: 'Product updated successfully',
-      data: { product: updatedProduct }
-    });
+    res.json({ success: true, data: { product: updated } });
   } catch (error) {
-    console.error('Update product error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating product'
-    });
+    res.status(500).json({ success: false, message: 'Error updating product' });
   }
 });
 
-// DELETE /api/admin/products/:id - Delete product
-router.delete('/:id', async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Product deleted successfully'
-    });
-  } catch (error) {
-    console.error('Delete product error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting product'
-    });
-  }
-});
-
-// PATCH /api/admin/products/:id/visibility - Toggle product visibility
-router.patch('/:id/visibility', async (req, res) => {
+// PATCH Toggle Visibility
+router.patch('/admin/toggle-visibility/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    if (req.body.visibility !== undefined) {
+      product.visibility = (req.body.visibility === true || req.body.visibility === 'true' || req.body.visibility === 'visible');
+    } else {
+      product.visibility = !product.visibility;
     }
 
-    product.visibility = product.visibility === 'visible' ? 'hidden' : 'visible';
     await product.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Product visibility updated',
-      data: { product }
-    });
+    res.json({ success: true, data: { product } });
   } catch (error) {
-    console.error('Toggle visibility error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating product visibility'
-    });
+    res.status(500).json({ success: false, message: 'Error toggling visibility' });
+  }
+});
+
+// DELETE Product
+router.delete('/admin/delete-product/:id', async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    res.json({ success: true, message: 'Product deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting product' });
   }
 });
 

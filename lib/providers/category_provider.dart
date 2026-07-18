@@ -26,32 +26,48 @@ class CategoryProvider extends ChangeNotifier {
 
     try {
       final response = await _apiClient.get('/categories');
-      debugPrint('Fetch Categories Response: ${response.statusCode} - ${response.body}');
+      debugPrint('CATEGORY FETCH RAW: ${response.body}');
       
-      if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        List? list;
-        
-        // Comprehensive check for all possible backend structures
-        if (result['categories'] != null) {
-          list = result['categories'];
-        } else if (result['data'] != null) {
-          if (result['data'] is List) {
-            list = result['data'];
-          } else if (result['data']['categories'] != null) {
-            list = result['data']['categories'];
+      final dynamic result = jsonDecode(response.body);
+      List? list;
+      
+      if (result is List) {
+        list = result;
+      } else if (result is Map) {
+        // Look for any list in common keys
+        list = result['categories'] ?? 
+               result['category'] ??
+               result['data']?['categories'] ?? 
+               result['data']?['category'] ??
+               (result['data'] is List ? result['data'] : null) ??
+               result['results'] ??
+               result['items'];
+               
+        // If still null, look for THE FIRST list found in the map
+        if (list == null) {
+          for (var value in result.values) {
+            if (value is List) {
+              list = value;
+              break;
+            }
           }
-        } else if (result is List) {
-          list = result;
-        }
-
-        if (list != null) {
-          _categories = list.map((item) => Category.fromJson(item)).toList();
-          debugPrint('Parsed ${_categories.length} categories');
         }
       }
+
+      if (list != null) {
+        _categories = list.map((item) {
+          try {
+            return Category.fromJson(item is String ? {'name': item, '_id': item} : Map<String, dynamic>.from(item));
+          } catch (e) {
+            return Category(id: 'err', name: 'Error Parsing', slug: 'err');
+          }
+        }).toList();
+        debugPrint('SUCCESS: Found ${_categories.length} categories');
+      } else {
+        debugPrint('FAILED: No list found in category response');
+      }
     } catch (e) {
-      debugPrint('Error fetching categories: $e');
+      debugPrint('CRITICAL: Category fetch failed: $e');
     }
 
     _isLoading = false;

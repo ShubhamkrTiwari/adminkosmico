@@ -132,22 +132,26 @@ class _CategoriesTabState extends State<CategoriesTab> {
   Widget _buildCategoryGrid() {
     return Consumer<CategoryProvider>(
       builder: (context, provider, _) {
+        // Force refresh if the provider list is empty but we haven't loaded yet
         if (provider.isLoading && provider.categories.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
         
-        if (provider.categories.isEmpty) {
+        final cats = provider.categories;
+
+        if (cats.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.category_outlined, size: 64, color: Colors.grey.shade300),
+                const Icon(Icons.category_outlined, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
-                const Text('No categories found', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 8),
-                ElevatedButton(
+                const Text('No categories found', style: TextStyle(color: Colors.black54, fontSize: 16)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
                   onPressed: _loadData,
-                  child: const Text('Refresh'),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Refresh Categories'),
                 )
               ],
             ),
@@ -157,16 +161,16 @@ class _CategoriesTabState extends State<CategoriesTab> {
         return LayoutBuilder(
           builder: (context, constraints) {
             return GridView.builder(
+              padding: const EdgeInsets.only(bottom: 100), // Extra space for FAB
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-                childAspectRatio: constraints.maxWidth > 600 ? 1.1 : 1.3,
+                maxCrossAxisExtent: 200,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.85,
               ),
-              itemCount: provider.categories.length,
+              itemCount: cats.length,
               itemBuilder: (context, index) {
-                final category = provider.categories[index];
-                return _buildCategoryCard(category);
+                return _buildCategoryCard(cats[index]);
               },
             );
           },

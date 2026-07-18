@@ -31,10 +31,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  visibility: {
+  productLink: {
     type: String,
-    enum: ['visible', 'hidden'],
-    default: 'visible'
+    trim: true,
+    default: ''
+  },
+  visibility: {
+    type: Boolean,
+    default: true
   },
   image: {
     type: String,

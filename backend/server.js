@@ -24,10 +24,12 @@ const connectDB = async () => {
 connectDB();
 
 // Routes
-app.use('/api/admin', require('./routes/authRoutes')); // Mount auth first to allow public login/signup
+app.use('/api/admin', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/admin/products', require('./routes/productRoutes'));
+app.use('/api/products', require('./routes/productRoutes')); // Added to support /api/products/...
 app.use('/api/admin/categories', require('./routes/categoryRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes')); // Added to support /api/categories/...
 app.use('/api/admin/orders', require('./routes/orderRoutes'));
 app.use('/api/admin/users', require('./routes/userRoutes'));
 app.use('/api/admin/notifications', require('./routes/notificationRoutes'));

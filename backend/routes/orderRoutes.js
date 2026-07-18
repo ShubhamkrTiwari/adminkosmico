@@ -22,7 +22,8 @@ router.get('/', async (req, res) => {
     const query = {};
     if (search) {
       query.$or = [
-        { 'shippingAddress.phone': { $regex: search, $options: 'i' } }
+        { 'shippingAddress.phone': { $regex: search, $options: 'i' } },
+        { 'orderId': { $regex: search, $options: 'i' } } // Assuming orderId exists
       ];
     }
     if (status) {
@@ -128,6 +129,72 @@ router.put('/:id/status', [
     res.status(500).json({
       success: false,
       message: 'Error updating order status'
+    });
+  }
+});
+
+// PUT /api/admin/orders/:id/payment-status - Update payment status
+router.put('/:id/payment-status', [
+  body('paymentStatus').isIn(['pending', 'completed', 'failed', 'refunded']).withMessage('Invalid payment status')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    const { paymentStatus } = req.body;
+    order.paymentStatus = paymentStatus;
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Order payment status updated to ${paymentStatus}`,
+      data: { order }
+    });
+  } catch (error) {
+    console.error('Update payment status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating payment status'
+    });
+  }
+});
+
+// DELETE /api/admin/orders/admin/:id - Delete order
+router.delete('/admin/:id', async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Order deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting order'
     });
   }
 });
