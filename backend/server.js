@@ -9,6 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads')); // Serve uploaded files
 
 // Database connection
 const connectDB = async () => {
@@ -36,6 +37,8 @@ app.use('/api/admin/notifications', require('./routes/notificationRoutes'));
 app.use('/api/admin/payments', require('./routes/paymentRoutes'));
 app.use('/api/admin/updates', require('./routes/updateRoutes'));
 app.use('/api/admin/maintenance', require('./routes/maintenanceRoutes'));
+app.use('/api/admin/coupons', require('./routes/couponRoutes'));
+app.use('/api/admin/upload', require('./routes/uploadRoutes')); // Add this line
 
 // Health check
 app.get('/api/health', (req, res) => {

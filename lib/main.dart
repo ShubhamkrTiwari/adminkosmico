@@ -12,6 +12,7 @@ import 'providers/notification_provider.dart';
 import 'providers/payment_provider.dart';
 import 'providers/update_provider.dart';
 import 'providers/maintenance_provider.dart';
+import 'providers/coupon_provider.dart';
 import 'views/auth/login_screen.dart';
 import 'views/dashboard/dashboard_main.dart';
 
@@ -31,6 +32,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => UpdateProvider()),
         ChangeNotifierProvider(create: (_) => MaintenanceProvider()),
+        ChangeNotifierProvider(create: (_) => CouponProvider()),
       ],
       child: const MyApp(),
     ),

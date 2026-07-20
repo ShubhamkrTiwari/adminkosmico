@@ -28,6 +28,50 @@ const findCategory = async (category) => {
   return categoryDoc;
 };
 
+/**
+ * Formats product to include categoryName and ensure category is just an ID
+ */
+const formatProduct = (product) => {
+  if (!product) return null;
+
+  // Mongoose document ko plain object mein badlein
+  const p = product.toObject ? product.toObject() : JSON.parse(JSON.stringify(product));
+
+  let categoryName = '';
+  let categoryId = p.category;
+
+  if (p.category && typeof p.category === 'object') {
+    // Agar populated object hai toh name nikaalein
+    if (p.category.name) {
+      categoryName = p.category.name;
+      categoryId = p.category._id || p.category;
+    } else if (p.category._id) {
+      categoryId = p.category._id;
+    }
+  }
+
+  // Use product.category as fallback if name is missing (Fix for "General" label)
+  if (categoryName === 'General' && categoryId) {
+    categoryName = categoryId.toString();
+  }
+
+  // Double check if categoryName is still 'General' and p has a populated category object
+  if (categoryName === 'General' && p.category && typeof p.category === 'object' && p.category.name) {
+    categoryName = p.category.name;
+  }
+
+  // Ensure categoryId string format mein ho (Frontend/Edit ke liye)
+  if (categoryId && typeof categoryId === 'object' && categoryId.toString) {
+    categoryId = categoryId.toString();
+  }
+
+  return {
+    ...p,
+    category: categoryId,
+    categoryName: categoryName
+  };
+};
+
 // GET all products
 router.get('/', async (req, res) => {
   try {
@@ -60,14 +104,17 @@ router.get('/', async (req, res) => {
       .populate('category', 'name slug')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
+
+    const productsWithNames = products.map(p => formatProduct(p));
 
     const total = await Product.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        products,
+        products: productsWithNames,
         pagination: {
           page,
           limit,
@@ -93,7 +140,7 @@ router.get('/:id', async (req, res) => {
       return res.status(403).json({ success: false, message: 'This product is currently unavailable' });
     }
 
-    res.status(200).json({ success: true, data: { product } });
+    res.status(200).json({ success: true, data: { product: formatProduct(product) } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching product' });
   }
@@ -120,7 +167,10 @@ router.post('/admin/add-product', async (req, res) => {
       productLink: productLink || ''
     });
 
-    res.status(201).json({ success: true, data: { product } });
+    // Populate category before sending response
+    const populatedProduct = await Product.findById(product._id).populate('category', 'name slug');
+
+    res.status(201).json({ success: true, data: { product: formatProduct(populatedProduct) } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error creating product: ' + error.message });
   }
@@ -154,7 +204,7 @@ router.put('/admin/update-product/:id', async (req, res) => {
       { new: true }
     ).populate('category');
 
-    res.json({ success: true, data: { product: updated } });
+    res.json({ success: true, data: { product: formatProduct(updated) } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error updating product' });
   }
@@ -173,7 +223,11 @@ router.patch('/admin/toggle-visibility/:id', async (req, res) => {
     }
 
     await product.save();
-    res.json({ success: true, data: { product } });
+
+    // Populate category name before sending back
+    const populatedProduct = await Product.findById(product._id).populate('category', 'name slug');
+
+    res.json({ success: true, data: { product: formatProduct(populatedProduct) } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error toggling visibility' });
   }

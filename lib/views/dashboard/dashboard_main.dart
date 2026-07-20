@@ -21,6 +21,7 @@ import 'notifications_tab.dart';
 import 'payments_tab.dart';
 import 'updates_tab.dart';
 import 'maintenance_tab.dart';
+import 'coupons_tab.dart';
 
 class DashboardMain extends StatefulWidget {
   const DashboardMain({super.key});
@@ -37,6 +38,7 @@ class _DashboardMainState extends State<DashboardMain> {
     'Dashboard Overview',
     'Product Management',
     'Category Management',
+    'Coupon Management',
     'Order Management',
     'User Management',
     'Notifications',
@@ -48,16 +50,16 @@ class _DashboardMainState extends State<DashboardMain> {
   int _getBottomNavIndex(int tabIndex) {
     if (tabIndex == 0) return 0; // Overview
     if (tabIndex == 1) return 1; // Products
-    if (tabIndex == 3) return 2; // Orders
-    if (tabIndex == 4) return 3; // Users
+    if (tabIndex == 4) return 2; // Orders
+    if (tabIndex == 5) return 3; // Users
     return 4; // More (for anything else)
   }
 
   int _getTabIndexFromBottomNav(int navIndex) {
     if (navIndex == 0) return 0; // Overview
     if (navIndex == 1) return 1; // Products
-    if (navIndex == 2) return 3; // Orders
-    if (navIndex == 3) return 4; // Users
+    if (navIndex == 2) return 4; // Orders
+    if (navIndex == 3) return 5; // Users
     return _selectedIndex; // Default (don't change if 'More' is clicked)
   }
 
@@ -168,6 +170,7 @@ class _DashboardMainState extends State<DashboardMain> {
                   OverviewTab(),
                   ProductsTab(),
                   CategoriesTab(),
+                  CouponsTab(),
                   OrdersTab(),
                   UsersTab(),
                   NotificationsTab(),

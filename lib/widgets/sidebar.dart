@@ -83,8 +83,9 @@ class Sidebar extends StatelessWidget {
                   _buildNavItem(context, 0, Icons.dashboard_rounded, 'Overview'),
                   _buildNavItem(context, 1, Icons.inventory_2_rounded, 'Products'),
                   _buildNavItem(context, 2, Icons.category_rounded, 'Categories'),
-                  _buildNavItem(context, 3, Icons.shopping_bag_rounded, 'Orders'),
-                  _buildNavItem(context, 4, Icons.people_rounded, 'Users'),
+                  _buildNavItem(context, 3, Icons.confirmation_number_rounded, 'Coupons'),
+                  _buildNavItem(context, 4, Icons.shopping_bag_rounded, 'Orders'),
+                  _buildNavItem(context, 5, Icons.people_rounded, 'Users'),
                   
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -92,12 +93,12 @@ class Sidebar extends StatelessWidget {
                   ),
                   
                   _buildSectionTitle('COMMUNICATION'),
-                  _buildNavItem(context, 5, Icons.notifications_active_rounded, 'Notifications'),
+                  _buildNavItem(context, 6, Icons.notifications_active_rounded, 'Notifications'),
                   
                   _buildSectionTitle('SYSTEM'),
-                  _buildNavItem(context, 6, Icons.payments_rounded, 'Payments'),
-                  _buildNavItem(context, 7, Icons.system_update_rounded, 'App Updates'),
-                  _buildNavItem(context, 8, Icons.settings_applications_rounded, 'Maintenance'),
+                  _buildNavItem(context, 7, Icons.payments_rounded, 'Payments'),
+                  _buildNavItem(context, 8, Icons.system_update_rounded, 'App Updates'),
+                  _buildNavItem(context, 9, Icons.settings_applications_rounded, 'Maintenance'),
                 ],
               ),
             ),

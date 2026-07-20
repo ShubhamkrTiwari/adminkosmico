@@ -1,6 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart'; // Add this for MediaType
 import '../core/api_client.dart';
+import '../core/constants.dart';
 import '../models/product.dart';
 
 class ProductProvider extends ChangeNotifier {
@@ -13,14 +18,80 @@ class ProductProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchProducts() async {
+  // Image Upload logic - Updated with MIME type detection
+  Future<String?> uploadImage(dynamic file, String filename) async {
+    try {
+      final token = await _apiClient.getToken();
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${AppConstants.baseUrl}/upload-image'),
+      );
+
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Determine extension and set correct MediaType
+      final ext = filename.split('.').last.toLowerCase();
+      final MediaType contentType = MediaType('image', ext == 'jpg' ? 'jpeg' : ext);
+
+      if (kIsWeb) {
+        // file is Uint8List for Web
+        request.files.add(http.MultipartFile.fromBytes(
+          'imageFile',
+          file,
+          filename: filename,
+          contentType: contentType,
+        ));
+      } else {
+        // file is File for Mobile/Desktop
+        request.files.add(await http.MultipartFile.fromPath(
+          'imageFile',
+          (file as File).path,
+          contentType: contentType,
+        ));
+      }
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('Upload Response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        // The server usually returns 'url' or 'imageUrl'
+        String? path = data['url'] ?? data['imageUrl'] ?? data['data']?['url'];
+        
+        if (path == null) return null;
+        
+        // If path is already a full URL, return it
+        if (path.startsWith('http')) return path;
+        
+        // Otherwise, construct the full URL
+        if (!path.startsWith('/')) path = '/$path';
+        String rootUrl = AppConstants.baseUrl.split('/api/admin')[0];
+        return rootUrl + path;
+      } else {
+        debugPrint('Upload failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Upload error detail: $e');
+    }
+    return null;
+  }
+
+  Future<void> fetchProducts({String? category, String? search}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _apiClient.get('/products');
-      debugPrint('FETCH PRODUCTS RAW: ${response.body}');
+      String url = '/products?limit=100';
+      if (category != null && category.isNotEmpty) url += '&category=$category';
+      if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeComponent(search)}';
+
+      final response = await _apiClient.get(url);
+      debugPrint('FETCH PRODUCTS URL: $url');
       
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);

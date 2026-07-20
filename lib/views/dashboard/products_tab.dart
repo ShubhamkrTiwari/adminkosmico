@@ -6,9 +6,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../../core/api_client.dart'; // Add this line
 import '../../core/constants.dart';
 import '../../models/product.dart';
+import '../../models/category.dart' as model;
 import '../../providers/product_provider.dart';
 import '../../providers/category_provider.dart';
 
@@ -146,7 +150,14 @@ class _ProductsTabState extends State<ProductsTab> {
         focusedBorder: InputBorder.none,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
-      onChanged: (value) => setState(() => _searchQuery = value),
+      onChanged: (value) {
+        setState(() => _searchQuery = value);
+        // Optional: Add debounce if you want to wait for user to stop typing
+        context.read<ProductProvider>().fetchProducts(
+          category: _selectedCategoryId,
+          search: value,
+        );
+      },
     );
   }
 
@@ -161,27 +172,28 @@ class _ProductsTabState extends State<ProductsTab> {
             const DropdownMenuItem(value: null, child: Text('All Categories')),
             ...catProvider.categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
           ],
-          onChanged: (v) => setState(() => _selectedCategoryId = v),
+          onChanged: (v) {
+            setState(() => _selectedCategoryId = v);
+            context.read<ProductProvider>().fetchProducts(
+              category: v,
+              search: _searchQuery,
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildProductTable() {
-    return Consumer<ProductProvider>(
-      builder: (context, provider, _) {
-        if (provider.isLoading && provider.products.isEmpty) {
+    return Consumer2<ProductProvider, CategoryProvider>(
+      builder: (context, provider, catProvider, _) {
+        if ((provider.isLoading && provider.products.isEmpty) || catProvider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final products = provider.products;
-        final filteredProducts = products.where((p) {
-          final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase());
-          final matchesCategory = _selectedCategoryId == null || p.categoryId == _selectedCategoryId;
-          return matchesSearch && matchesCategory;
-        }).toList();
+        final filteredProducts = provider.products;
 
-        if (products.isEmpty) {
+        if (filteredProducts.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -234,7 +246,7 @@ class _ProductsTabState extends State<ProductsTab> {
               // Mobile View: List of Cards
               return ListView.builder(
                 itemCount: filteredProducts.length,
-                padding: const EdgeInsets.only(bottom: 100),
+                padding: const EdgeInsets.all(16), // Adjusted padding
                 itemBuilder: (context, index) => _buildProductMobileCard(filteredProducts[index]),
               );
             }
@@ -527,6 +539,53 @@ class _ProductDialogState extends State<ProductDialog> {
   String? _selectedCategory;
   bool _isVisible = true;
   bool _isFetching = false;
+  bool _isUploading = false;
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null) {
+        setState(() => _isUploading = true);
+        
+        final platformFile = result.files.single;
+        String? uploadedUrl;
+        
+        if (kIsWeb) {
+          uploadedUrl = await context.read<ProductProvider>().uploadImage(
+            platformFile.bytes, 
+            platformFile.name
+          );
+        } else {
+          uploadedUrl = await context.read<ProductProvider>().uploadImage(
+            File(platformFile.path!), 
+            platformFile.name
+          );
+        }
+
+        if (uploadedUrl != null) {
+          setState(() {
+            _imageController.text = uploadedUrl!;
+            _isUploading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image uploaded!'), backgroundColor: Colors.green),
+          );
+        } else {
+          setState(() => _isUploading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Upload failed'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Pick image error: $e');
+      setState(() => _isUploading = false);
+    }
+  }
 
   @override
   void initState() {
@@ -689,10 +748,17 @@ class _ProductDialogState extends State<ProductDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _imageController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Image URL',
                   hintText: 'https://example.com/product.jpg',
-                  prefixIcon: Icon(Icons.image_outlined),
+                  prefixIcon: const Icon(Icons.image_outlined),
+                  suffixIcon: _isUploading 
+                      ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
+                      : IconButton(
+                          icon: const Icon(Icons.upload_file_rounded),
+                          onPressed: _pickAndUploadImage,
+                          tooltip: 'Upload image from device',
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
