@@ -52,7 +52,7 @@ class _DashboardMainState extends State<DashboardMain> {
     if (tabIndex == 1) return 1; // Products
     if (tabIndex == 4) return 2; // Orders
     if (tabIndex == 5) return 3; // Users
-    return 4; // More (for anything else)
+    return 0; // Default to first if not in bottom nav
   }
 
   int _getTabIndexFromBottomNav(int navIndex) {
@@ -60,7 +60,7 @@ class _DashboardMainState extends State<DashboardMain> {
     if (navIndex == 1) return 1; // Products
     if (navIndex == 2) return 4; // Orders
     if (navIndex == 3) return 5; // Users
-    return _selectedIndex; // Default (don't change if 'More' is clicked)
+    return 0;
   }
 
   @override
@@ -71,13 +71,33 @@ class _DashboardMainState extends State<DashboardMain> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary.withOpacity(0.05),
+                AppColors.primary.withOpacity(0.1),
+              ],
+            ),
+          ),
+        ),
+        leading: !isDesktop ? IconButton(
+          icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ) : null,
         title: Text(
           _titles[_selectedIndex],
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700, 
+            fontSize: 18,
+            color: AppColors.textDark,
+          ),
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: AppColors.primary.withOpacity(0.15),
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
             icon: Icon(
@@ -123,11 +143,7 @@ class _DashboardMainState extends State<DashboardMain> {
                 child: BottomNavigationBar(
                   currentIndex: _getBottomNavIndex(_selectedIndex),
                   onTap: (index) {
-                    if (index == 4) {
-                      _scaffoldKey.currentState?.openDrawer();
-                    } else {
-                      setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
-                    }
+                    setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
                   },
                   type: BottomNavigationBarType.fixed,
                   backgroundColor: Colors.white.withOpacity(0.95), // Slight transparency to blend
@@ -148,40 +164,42 @@ class _DashboardMainState extends State<DashboardMain> {
                     _buildBottomNavItem(Icons.inventory_2_outlined, 'Products', 1),
                     _buildBottomNavItem(Icons.shopping_bag_outlined, 'Orders', 2),
                     _buildBottomNavItem(Icons.people_outline_rounded, 'Users', 3),
-                    _buildBottomNavItem(Icons.menu_rounded, 'More', 4),
                   ],
                 ),
               ),
             )
           : null,
-      body: Row(
-        children: [
-          if (isDesktop)
-            Sidebar(
-              selectedIndex: _selectedIndex,
-              onItemSelected: (index) => setState(() => _selectedIndex = index),
-            ),
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.surface,
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: const [
-                  OverviewTab(),
-                  ProductsTab(),
-                  CategoriesTab(),
-                  CouponsTab(),
-                  OrdersTab(),
-                  UsersTab(),
-                  NotificationsTab(),
-                  PaymentsTab(),
-                  UpdatesTab(),
-                  MaintenanceTab(),
-                ],
+      body: Container(
+        decoration: BoxDecoration(gradient: AppColors.subtleGradient),
+        child: Row(
+          children: [
+            if (isDesktop)
+              Sidebar(
+                selectedIndex: _selectedIndex,
+                onItemSelected: (index) => setState(() => _selectedIndex = index),
+              ),
+            Expanded(
+              child: Container(
+                color: Colors.transparent,
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: const [
+                    OverviewTab(),
+                    ProductsTab(),
+                    CategoriesTab(),
+                    CouponsTab(),
+                    OrdersTab(),
+                    UsersTab(),
+                    NotificationsTab(),
+                    PaymentsTab(),
+                    UpdatesTab(),
+                    MaintenanceTab(),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

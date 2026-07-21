@@ -62,17 +62,23 @@ class StatCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
               ),
             ),
             Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
                 color: AppColors.textLight,
                 fontSize: 12,

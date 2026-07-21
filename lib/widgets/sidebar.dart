@@ -31,11 +31,7 @@ class Sidebar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.only(top: 60, bottom: 32, left: 24, right: 24),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppColors.primaryGradient,
               ),
               child: Row(
                 children: [

@@ -5,9 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../providers/dashboard_provider.dart';
-import '../../providers/user_provider.dart';
-import '../../providers/order_provider.dart';
-import '../../providers/notification_provider.dart';
 import '../../widgets/stat_card.dart';
 
 class OverviewTab extends StatefulWidget {
@@ -48,20 +45,7 @@ class _OverviewTabState extends State<OverviewTab> {
         return RefreshIndicator(
           onRefresh: _loadData,
           color: AppColors.primary,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.primary.withOpacity(0.15),
-                  const Color(0xFFF4F7F4),
-                  Colors.white,
-                ],
-                stops: const [0.0, 0.4, 1.0],
-              ),
-            ),
-            child: CustomScrollView(
+          child: CustomScrollView(
               slivers: [
                 // Modern App Header
                 SliverToBoxAdapter(
@@ -110,7 +94,7 @@ class _OverviewTabState extends State<OverviewTab> {
                       crossAxisCount: 2,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
-                      childAspectRatio: 1.4,
+                      childAspectRatio: 1.15,
                     ),
                     delegate: SliverChildListDelegate([
                       StatCard(
@@ -182,7 +166,6 @@ class _OverviewTabState extends State<OverviewTab> {
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
-          ),
         );
       },
     );
@@ -193,7 +176,7 @@ class _OverviewTabState extends State<OverviewTab> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
       ),
       child: IconButton(
         icon: Icon(icon, color: AppColors.textDark, size: 22),
@@ -222,7 +205,7 @@ class _OverviewTabState extends State<OverviewTab> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +240,7 @@ class _OverviewTabState extends State<OverviewTab> {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [AppColors.primary.withOpacity(0.2), AppColors.primary.withOpacity(0)],
+                            colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.primary.withValues(alpha: 0)],
                           ),
                         ),
                       ),
@@ -276,7 +259,7 @@ class _OverviewTabState extends State<OverviewTab> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,14 +279,14 @@ class _OverviewTabState extends State<OverviewTab> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: orders.take(5).length,
-              separatorBuilder: (_, __) => const Divider(height: 24),
+              separatorBuilder: (_, _) => const Divider(height: 24),
               itemBuilder: (context, index) {
                 final order = orders[index];
                 return Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), shape: BoxShape.circle),
                       child: const Icon(Icons.shopping_bag_outlined, color: Colors.blue, size: 18),
                     ),
                     const SizedBox(width: 16),
@@ -332,7 +315,7 @@ class _OverviewTabState extends State<OverviewTab> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

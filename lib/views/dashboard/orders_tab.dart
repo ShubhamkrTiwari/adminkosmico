@@ -30,18 +30,7 @@ class _OrdersTabState extends State<OrdersTab> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary.withOpacity(0.15),
-            const Color(0xFFF4F7F4),
-            Colors.white,
-          ],
-          stops: const [0.0, 0.4, 1.0],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: AppColors.subtleGradient),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Material(
@@ -135,34 +124,139 @@ class _OrdersTabState extends State<OrdersTab> {
         final filteredOrders = provider.orders.where((o) => 
           o.id.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                horizontalMargin: 24,
-                columnSpacing: 24,
-                columns: const [
-                  DataColumn(label: Text('Order ID')),
-                  DataColumn(label: Text('Customer')),
-                  DataColumn(label: Text('Total')),
-                  DataColumn(label: Text('Payment')),
-                  DataColumn(label: Text('Status')),
-                  DataColumn(label: Text('Date')),
-                  DataColumn(label: Text('Actions')),
-                ],
-                rows: filteredOrders.map((o) => _buildDataRow(o)).toList(),
-              ),
+        if (filteredOrders.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('No orders found', style: TextStyle(color: Colors.black54, fontSize: 16)),
+              ],
             ),
-          ),
+          );
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 900) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: DataTable(
+                      horizontalMargin: 24,
+                      columnSpacing: 24,
+                      columns: const [
+                        DataColumn(label: Text('Order ID')),
+                        DataColumn(label: Text('Customer')),
+                        DataColumn(label: Text('Total')),
+                        DataColumn(label: Text('Payment')),
+                        DataColumn(label: Text('Status')),
+                        DataColumn(label: Text('Date')),
+                        DataColumn(label: Text('Actions')),
+                      ],
+                      rows: filteredOrders.map((o) => _buildDataRow(o)).toList(),
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              return ListView.builder(
+                itemCount: filteredOrders.length,
+                itemBuilder: (context, index) => _buildOrderMobileCard(filteredOrders[index]),
+              );
+            }
+          },
         );
       },
+    );
+  }
+
+  Widget _buildOrderMobileCard(Order o) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showOrderDetails(o),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '#${o.id.substring(o.id.length - 6).toUpperCase()}',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    _buildStatusChip(o.status),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline_rounded, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Text(o.userName, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_rounded, size: 14, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormat('MMM dd, yyyy • hh:mm a').format(o.createdAt),
+                      style: TextStyle(color: AppColors.textLight, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Total Amount', style: TextStyle(color: AppColors.textLight, fontSize: 11)),
+                        Text('₹${o.total}', style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        _buildStatusChip(o.paymentStatus),
+                        const SizedBox(width: 8),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded),
+                          onSelected: (status) => context.read<OrderProvider>().updateOrderStatus(o.id, status),
+                          itemBuilder: (context) => [
+                            'Processing', 'Shipped', 'Delivered', 'Cancelled'
+                          ].map((s) => PopupMenuItem(value: s.toLowerCase(), child: Text('Mark as $s'))).toList(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

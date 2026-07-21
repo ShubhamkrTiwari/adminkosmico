@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:device_preview/device_preview.dart';
 import 'core/constants.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -19,22 +21,25 @@ import 'views/dashboard/dashboard_main.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => DashboardProvider()),
-        ChangeNotifierProvider(create: (_) => ProductProvider()),
-        ChangeNotifierProvider(create: (_) => CategoryProvider()),
-        ChangeNotifierProvider(create: (_) => OrderProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()),
-        ChangeNotifierProvider(create: (_) => PaymentProvider()),
-        ChangeNotifierProvider(create: (_) => UpdateProvider()),
-        ChangeNotifierProvider(create: (_) => MaintenanceProvider()),
-        ChangeNotifierProvider(create: (_) => CouponProvider()),
-      ],
-      child: const MyApp(),
+    DevicePreview(
+      enabled: !kReleaseMode,
+      builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => DashboardProvider()),
+          ChangeNotifierProvider(create: (_) => ProductProvider()),
+          ChangeNotifierProvider(create: (_) => CategoryProvider()),
+          ChangeNotifierProvider(create: (_) => OrderProvider()),
+          ChangeNotifierProvider(create: (_) => UserProvider()),
+          ChangeNotifierProvider(create: (_) => NotificationProvider()),
+          ChangeNotifierProvider(create: (_) => PaymentProvider()),
+          ChangeNotifierProvider(create: (_) => UpdateProvider()),
+          ChangeNotifierProvider(create: (_) => MaintenanceProvider()),
+          ChangeNotifierProvider(create: (_) => CouponProvider()),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -48,6 +53,9 @@ class MyApp extends StatelessWidget {
     
     return MaterialApp(
       title: 'Kosmico Wellness Admin',
+      useInheritedMediaQuery: true,
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

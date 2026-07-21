@@ -50,18 +50,7 @@ class _ProductsTabState extends State<ProductsTab> {
             )
           : null,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.15),
-              const Color(0xFFF4F7F4),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppColors.subtleGradient),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Material(
@@ -336,12 +325,12 @@ class _ProductsTabState extends State<ProductsTab> {
                         ),
                         const SizedBox(height: 12),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               '₹${p.price.toStringAsFixed(0)}',
                               style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
                             ),
+                            const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
@@ -356,6 +345,12 @@ class _ProductsTabState extends State<ProductsTab> {
                                   fontSize: 11,
                                 ),
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildActionButton(
+                              icon: Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                              onTap: () => _showDeleteConfirm(p),
                             ),
                           ],
                         ),

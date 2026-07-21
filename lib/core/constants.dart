@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF2E7D32); // Natural Green
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color secondary = Color(0xFFF5F5F1); // Cream/Off-white
-  static const Color textDark = Color(0xFF1A1A1A); // Dark Navy/Black
-  static const Color textLight = Color(0xFF757575);
-  static const Color accent = Color(0xFF673AB7); // Subtle Purple
-  static const Color background = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color success = Color(0xFF388E3C);
-  static const Color info = Color(0xFF1976D2);
-  static const Color warning = Color(0xFFFBC02D);
+  static const Color primary = Color(0xFF0D3310); // Rich Dark Forest Green
+  static const Color primaryLight = Color(0xFF2E7D32);
+  static const Color primaryDark = Color(0xFF051B07);
+  static const Color secondary = Color(0xFFF5F5F1); 
+  static const Color textDark = Color(0xFF101820);
+  static const Color textLight = Color(0xFF667085);
+  static const Color accent = Color(0xFFD4AF37); // Luxury Gold accent
+  static const Color background = Color(0xFFFCFCFD);
+  static const Color surface = Colors.white;
+
+  static LinearGradient primaryGradient = const LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF0D3310), // Rich Dark Green
+      Color(0xFF1B5E20), // Deep Green
+      Color(0xFF2E7D32), // Forest Green
+    ],
+  );
+
+  static LinearGradient subtleGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      const Color(0xFF0D3310).withOpacity(0.12), // Darker hint at top
+      const Color(0xFFF8FAF8),
+      Colors.white,
+    ],
+    stops: const [0.0, 0.4, 1.0],
+  );
 }
 
 class AppConstants {
