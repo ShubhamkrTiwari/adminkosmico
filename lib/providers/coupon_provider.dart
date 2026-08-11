@@ -19,18 +19,42 @@ class CouponProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiClient.get('/coupons');
+      // Trying to use public route first for better reliability across apps
+      final response = await _apiClient.get('/coupons/admin/list');
+      debugPrint('FETCH COUPONS: ${response.statusCode} - ${response.body}');
+
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        if (result['success'] == true) {
-          final List list = result['data']['coupons'];
+        debugPrint('COUPON DATA RECEIVED: $result');
+        
+        List? list;
+        if (result is Map) {
+          if (result['success'] == true) {
+            if (result['data'] != null && result['data']['coupons'] is List) {
+              list = result['data']['coupons'];
+            } else if (result['coupons'] is List) {
+              list = result['coupons'];
+            } else if (result['data'] is List) {
+              list = result['data'];
+            }
+          }
+        } else if (result is List) {
+          list = result;
+        }
+
+        if (list != null) {
           _coupons = list.map((item) => Coupon.fromJson(item)).toList();
+          debugPrint('SUCCESS: Loaded ${_coupons.length} coupons');
+        } else {
+          _coupons = [];
+          debugPrint('WARNING: No coupons found in response');
         }
       } else {
-        _error = 'Failed to load coupons';
+        _error = 'Failed to load coupons: ${response.statusCode}';
       }
     } catch (e) {
-      _error = 'Connection error';
+      debugPrint('CRITICAL: Coupon fetch failed: $e');
+      _error = 'Connection error: $e';
     }
 
     _isLoading = false;
@@ -52,7 +76,7 @@ class CouponProvider extends ChangeNotifier {
 
   Future<bool> updateCoupon(String id, Map<String, dynamic> data) async {
     try {
-      final response = await _apiClient.put('/coupons/admin/update-coupon/$id', data);
+      final response = await _apiClient.put('/coupons/update/$id', data);
       if (response.statusCode == 200) {
         fetchCoupons();
         return true;
@@ -65,7 +89,7 @@ class CouponProvider extends ChangeNotifier {
 
   Future<bool> deleteCoupon(String id) async {
     try {
-      final response = await _apiClient.delete('/coupons/admin/delete-coupon/$id');
+      final response = await _apiClient.delete('/coupons/$id');
       if (response.statusCode == 200) {
         _coupons.removeWhere((c) => c.id == id);
         notifyListeners();
@@ -79,12 +103,30 @@ class CouponProvider extends ChangeNotifier {
 
   Future<bool> toggleStatus(String id) async {
     try {
-      final response = await _apiClient.patch('/coupons/admin/toggle-status/$id', {});
+      final response = await _apiClient.patch('/coupons/toggle/$id', {});
       if (response.statusCode == 200) {
         final index = _coupons.indexWhere((c) => c.id == id);
         if (index != -1) {
           final result = jsonDecode(response.body);
-          _coupons[index] = Coupon.fromJson(result['data']['coupon']);
+          // If the server returns the full coupon object in result['data']['coupon']
+          if (result['data'] != null && result['data']['coupon'] != null) {
+             _coupons[index] = Coupon.fromJson(result['data']['coupon']);
+          } else {
+            // If it only returns isActive status as per screenshot
+            final current = _coupons[index];
+            _coupons[index] = Coupon(
+              id: current.id,
+              code: current.code,
+              discountType: current.discountType,
+              discountAmount: current.discountAmount,
+              minOrderAmount: current.minOrderAmount,
+              expiryDate: current.expiryDate,
+              usageLimit: current.usageLimit,
+              usedCount: current.usedCount,
+              isActive: result['isActive'] ?? !current.isActive,
+              description: current.description,
+            );
+          }
           notifyListeners();
           return true;
         }

@@ -9,7 +9,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
-import '../../core/api_client.dart'; // Add this line
+import '../../core/api_client.dart';
 import '../../core/constants.dart';
 import '../../models/product.dart';
 import '../../models/category.dart' as model;
@@ -39,6 +39,7 @@ class _ProductsTabState extends State<ProductsTab> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -50,7 +51,7 @@ class _ProductsTabState extends State<ProductsTab> {
             )
           : null,
       body: Container(
-        decoration: BoxDecoration(gradient: AppColors.subtleGradient),
+        decoration: BoxDecoration(gradient: AppColors.getSubtleGradient(isDark)),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Material(
@@ -88,20 +89,23 @@ class _ProductsTabState extends State<ProductsTab> {
   }
 
   Widget _buildHeaderText() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Products', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text('Manage your inventory and availability', style: TextStyle(color: AppColors.textLight)),
+        Text('Products', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+        Text('Manage your inventory and availability', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
       ],
     );
   }
 
   Widget _buildFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
       ),
@@ -141,7 +145,6 @@ class _ProductsTabState extends State<ProductsTab> {
       ),
       onChanged: (value) {
         setState(() => _searchQuery = value);
-        // Optional: Add debounce if you want to wait for user to stop typing
         context.read<ProductProvider>().fetchProducts(
           category: _selectedCategoryId,
           search: value,
@@ -151,12 +154,15 @@ class _ProductsTabState extends State<ProductsTab> {
   }
 
   Widget _buildCategoryDropdown() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<CategoryProvider>(
       builder: (context, catProvider, _) {
         return DropdownButton<String>(
-          hint: const Text('All Categories'),
+          hint: Text('All Categories', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
           value: _selectedCategoryId,
           underline: const SizedBox(),
+          dropdownColor: isDark ? Colors.grey[900] : Colors.white,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
           items: [
             const DropdownMenuItem(value: null, child: Text('All Categories')),
             ...catProvider.categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))),
@@ -204,10 +210,9 @@ class _ProductsTabState extends State<ProductsTab> {
         return LayoutBuilder(
           builder: (context, constraints) {
             if (constraints.maxWidth > 900) {
-              // Desktop View: Table
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
                 ),
@@ -232,10 +237,9 @@ class _ProductsTabState extends State<ProductsTab> {
                 ),
               );
             } else {
-              // Mobile View: List of Cards
               return ListView.builder(
                 itemCount: filteredProducts.length,
-                padding: const EdgeInsets.all(16), // Adjusted padding
+                padding: const EdgeInsets.all(16),
                 itemBuilder: (context, index) => _buildProductMobileCard(filteredProducts[index]),
               );
             }
@@ -246,10 +250,11 @@ class _ProductsTabState extends State<ProductsTab> {
   }
 
   Widget _buildProductMobileCard(Product p) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
@@ -264,7 +269,6 @@ class _ProductsTabState extends State<ProductsTab> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox(
@@ -284,7 +288,6 @@ class _ProductsTabState extends State<ProductsTab> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Details
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,21 +295,26 @@ class _ProductsTabState extends State<ProductsTab> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                p.categoryName ?? 'General',
-                                style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  p.categoryName ?? 'General',
+                                  style: TextStyle(color: isDark ? Colors.white : AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(p.isVisible ? 'On' : 'Off', style: TextStyle(fontSize: 10, color: p.isVisible ? AppColors.primary : Colors.grey)),
+                                Text(p.isVisible ? 'On' : 'Off', style: TextStyle(fontSize: 10, color: p.isVisible ? (isDark ? Colors.white : AppColors.primary) : Colors.grey)),
                                 Switch.adaptive(
                                   value: p.isVisible,
                                   onChanged: (val) => context.read<ProductProvider>().toggleVisibility(p.id, val),
@@ -326,27 +334,30 @@ class _ProductsTabState extends State<ProductsTab> {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            Text(
-                              '₹${p.price.toStringAsFixed(0)}',
-                              style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+                            Flexible(
+                              child: Text(
+                                '₹${p.price.toStringAsFixed(0)}',
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: isDark ? Colors.white : AppColors.primary),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const Spacer(),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (p.stock < 10 ? Colors.red : Colors.green).withOpacity(0.1),
+                                color: (p.stock < 10 ? Colors.red : (isDark ? Colors.lightGreen : Colors.green)).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 'Stock: ${p.stock}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: p.stock < 10 ? Colors.red : Colors.green,
+                                  color: p.stock < 10 ? Colors.red : (isDark ? Colors.lightGreen : Colors.green),
                                   fontSize: 11,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             _buildActionButton(
                               icon: Icons.delete_outline_rounded,
                               color: Colors.redAccent,
@@ -367,6 +378,7 @@ class _ProductsTabState extends State<ProductsTab> {
   }
 
   DataRow _buildDataRow(Product p) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DataRow(cells: [
       DataCell(Row(
         children: [
@@ -408,7 +420,7 @@ class _ProductsTabState extends State<ProductsTab> {
                 ),
                 Text(
                   'ID: ${p.id.substring(p.id.length > 6 ? p.id.length - 6 : 0).toUpperCase()}',
-                  style: TextStyle(color: AppColors.textLight, fontSize: 10),
+                  style: TextStyle(color: AppColors.getSecondaryTextColor(Theme.of(context).brightness == Brightness.dark), fontSize: 10),
                 ),
               ],
             ),
@@ -423,10 +435,10 @@ class _ProductsTabState extends State<ProductsTab> {
         ),
         child: Text(
           p.categoryName ?? 'General',
-          style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w500),
+          style: TextStyle(color: isDark ? Colors.lightBlueAccent : Colors.blue, fontSize: 12, fontWeight: FontWeight.w500),
         ),
       )),
-      DataCell(Text('₹${p.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w600))),
+      DataCell(Text('₹${p.price.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87))),
       DataCell(Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -437,7 +449,7 @@ class _ProductsTabState extends State<ProductsTab> {
           p.stock.toString(),
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: p.stock < 10 ? Colors.red : Colors.green,
+            color: p.stock < 10 ? Colors.red : (isDark ? Colors.lightGreen : Colors.green),
             fontSize: 12,
           ),
         ),
@@ -450,7 +462,7 @@ class _ProductsTabState extends State<ProductsTab> {
             onChanged: (val) => context.read<ProductProvider>().toggleVisibility(p.id, val),
             activeColor: AppColors.primary,
           ),
-          Text(p.isVisible ? 'On' : 'Off', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: p.isVisible ? AppColors.primary : Colors.grey)),
+          Text(p.isVisible ? 'On' : 'Off', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: p.isVisible ? (isDark ? Colors.white : AppColors.primary) : Colors.grey)),
         ],
       )),
       DataCell(Row(
@@ -594,7 +606,6 @@ class _ProductDialogState extends State<ProductDialog> {
     _selectedCategory = widget.product?.categoryId;
     _isVisible = widget.product?.isVisible ?? true;
 
-    // Ensure categories are loaded when dialog opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final catProvider = context.read<CategoryProvider>();
       if (catProvider.categories.isEmpty) {
@@ -830,14 +841,11 @@ class _ProductDialogState extends State<ProductDialog> {
     setState(() => _isFetching = true);
 
     try {
-      final client = ApiClient(); // Use a local instance to be safe
+      final client = ApiClient();
       final response = await client.post('/products/admin/extract-url', {
-        'productUrl': url, // Updated key from 'url' to 'productUrl'
+        'productUrl': url,
       });
       
-      debugPrint('Extract URL Status: ${response.statusCode}');
-      debugPrint('Extract URL Response: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final productData = data['data'] ?? data;
@@ -870,7 +878,6 @@ class _ProductDialogState extends State<ProductDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Server extraction failed: $e. Falling back to local fetch...')),
         );
-        // Fallback to local scraping if server fails
         _fetchProductDataLocal(url);
       }
     } finally {
@@ -883,7 +890,6 @@ class _ProductDialogState extends State<ProductDialog> {
   Future<void> _fetchProductDataLocal(String url) async {
     setState(() => _isFetching = true);
     try {
-      // Existing proxy logic as fallback
       final proxyUrl = 'https://api.allorigins.win/get?url=${Uri.encodeComponent(url)}';
       final response = await http.get(Uri.parse(proxyUrl)).timeout(const Duration(seconds: 20));
       
@@ -917,7 +923,6 @@ class _ProductDialogState extends State<ProductDialog> {
 
   String? _extractMetaContent(dom.Document document, List<String> properties) {
     for (final prop in properties) {
-      // Try og:property
       final meta = document.querySelector('meta[property="$prop"]');
       if (meta != null) {
         final content = meta.attributes['content'];
@@ -925,7 +930,6 @@ class _ProductDialogState extends State<ProductDialog> {
           return content.trim();
         }
       }
-      // Try name=property
       final metaName = document.querySelector('meta[name="$prop"]');
       if (metaName != null) {
         final content = metaName.attributes['content'];

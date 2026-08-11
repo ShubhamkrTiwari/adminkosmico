@@ -61,6 +61,15 @@ const orderSchema = new mongoose.Schema({
   paymentId: {
     type: String
   },
+  shiprocketOrderId: {
+    type: String
+  },
+  shipmentId: {
+    type: String
+  },
+  trackingUrl: {
+    type: String
+  },
   timeline: [{
     status: String,
     timestamp: { type: Date, default: Date.now },

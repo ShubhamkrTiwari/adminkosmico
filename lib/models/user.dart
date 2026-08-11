@@ -6,6 +6,7 @@ class User {
   final bool isAdmin;
   final String accountStatus;
   final DateTime? createdAt;
+  final String? profilePic;
 
   User({
     required this.id,
@@ -15,6 +16,7 @@ class User {
     required this.isAdmin,
     required this.accountStatus,
     this.createdAt,
+    this.profilePic,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class User {
       isAdmin: json['isAdmin'] ?? false,
       accountStatus: json['isBlocked'] == true ? 'blocked' : 'active', // Map isBlocked to accountStatus
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      profilePic: json['profilePicture'] ?? json['profilePic'],
     );
   }
 
@@ -38,6 +41,7 @@ class User {
       'isAdmin': isAdmin,
       'accountStatus': accountStatus,
       'createdAt': createdAt?.toIso8601String(),
+      'profilePic': profilePic,
     };
   }
 }

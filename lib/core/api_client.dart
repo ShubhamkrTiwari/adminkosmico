@@ -78,8 +78,12 @@ class ApiClient {
     if (response.statusCode == 401 || response.statusCode == 403) {
       // Session expired or unauthorized
       clearSession();
-      // Note: Ideally, this should trigger a logout in the UI. 
-      // This is handled in the AuthProvider usually.
+    }
+    
+    // Check if the response is HTML (often happens on 404 or server errors)
+    final contentType = response.headers['content-type'] ?? '';
+    if (contentType.contains('text/html') || response.body.trim().startsWith('<!DOCTYPE')) {
+      throw FormatException('Server returned HTML instead of JSON. Status: ${response.statusCode}');
     }
   }
 }

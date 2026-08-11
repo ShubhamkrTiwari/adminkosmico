@@ -39,16 +39,7 @@ class _NotificationsTabState extends State<NotificationsTab> {
           : null,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.15),
-              const Color(0xFFF4F7F4),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
+          gradient: AppColors.getSubtleGradient(Theme.of(context).brightness == Brightness.dark),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -66,14 +57,16 @@ class _NotificationsTabState extends State<NotificationsTab> {
   }
 
   Widget _buildHeader(bool isDesktop) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Push Notifications', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('Broadcast and track system messages', style: TextStyle(color: AppColors.textLight)),
+            Text('Push Notifications', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+            Text('Broadcast and track system messages', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
           ],
         ),
         if (isDesktop)
@@ -107,9 +100,10 @@ class _NotificationsTabState extends State<NotificationsTab> {
           );
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[900] : Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
           ),

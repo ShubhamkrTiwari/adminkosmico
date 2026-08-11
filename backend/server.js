@@ -38,6 +38,7 @@ app.use('/api/admin/payments', require('./routes/paymentRoutes'));
 app.use('/api/admin/updates', require('./routes/updateRoutes'));
 app.use('/api/admin/maintenance', require('./routes/maintenanceRoutes'));
 app.use('/api/admin/coupons', require('./routes/couponRoutes'));
+app.use('/api/coupons', require('./routes/couponRoutes')); // Public access
 app.use('/api/admin/upload', require('./routes/uploadRoutes')); // Add this line
 
 // Health check

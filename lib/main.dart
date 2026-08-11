@@ -5,6 +5,7 @@ import 'package:device_preview/device_preview.dart';
 import 'core/constants.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/navigation_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/category_provider.dart';
@@ -27,6 +28,7 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => NavigationProvider()),
           ChangeNotifierProvider(create: (_) => DashboardProvider()),
           ChangeNotifierProvider(create: (_) => ProductProvider()),
           ChangeNotifierProvider(create: (_) => CategoryProvider()),
@@ -61,7 +63,20 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
       ),
-      darkTheme: ThemeData.dark(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary, 
+          brightness: Brightness.dark,
+          surface: const Color(0xFF121212),
+        ),
+        cardColor: Colors.grey[900],
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: const TextStyle(color: Colors.white54),
+          prefixIconColor: Colors.white54,
+          labelStyle: const TextStyle(color: Colors.white70),
+        ),
+      ),
       themeMode: themeProvider.themeMode,
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {

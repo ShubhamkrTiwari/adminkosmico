@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/navigation_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/category_provider.dart';
@@ -11,6 +12,7 @@ import '../../providers/user_provider.dart';
 import '../../providers/payment_provider.dart';
 import '../../providers/update_provider.dart';
 import '../../providers/maintenance_provider.dart';
+import '../../providers/coupon_provider.dart';
 import '../../widgets/sidebar.dart';
 import 'overview_tab.dart';
 import 'products_tab.dart';
@@ -31,7 +33,6 @@ class DashboardMain extends StatefulWidget {
 }
 
 class _DashboardMainState extends State<DashboardMain> {
-  int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<String> _titles = [
@@ -66,7 +67,9 @@ class _DashboardMainState extends State<DashboardMain> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final navProvider = Provider.of<NavigationProvider>(context);
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final selectedIndex = navProvider.selectedIndex;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -77,23 +80,28 @@ class _DashboardMainState extends State<DashboardMain> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primary.withOpacity(0.05),
-                AppColors.primary.withOpacity(0.1),
+                const Color(0xFFE1F0E1), // Match the new background top color
+                const Color(0xFFE1F0E1).withOpacity(0.5),
               ],
             ),
           ),
         ),
         leading: !isDesktop ? IconButton(
-          icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+          icon: Icon(
+            Icons.menu_rounded, 
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.primary
+          ),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ) : null,
         title: Text(
-          _titles[_selectedIndex],
+          _titles[selectedIndex],
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700, 
             fontSize: 18,
-            color: AppColors.textDark,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textDark,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         centerTitle: true,
         elevation: 0,
@@ -114,6 +122,7 @@ class _DashboardMainState extends State<DashboardMain> {
               context.read<DashboardProvider>().fetchDashboardData(context);
               context.read<ProductProvider>().fetchProducts();
               context.read<CategoryProvider>().fetchCategories();
+              context.read<CouponProvider>().fetchCoupons();
               context.read<MaintenanceProvider>().fetchMaintenanceStatus();
             },
           ),
@@ -121,16 +130,16 @@ class _DashboardMainState extends State<DashboardMain> {
         ],
       ),
       drawer: Sidebar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: selectedIndex,
         onItemSelected: (index) {
-          setState(() => _selectedIndex = index);
+          navProvider.setSelectedIndex(index);
           if (!isDesktop) Navigator.pop(context);
         },
       ),
       bottomNavigationBar: !isDesktop
           ? Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withOpacity(0.08),
@@ -141,19 +150,18 @@ class _DashboardMainState extends State<DashboardMain> {
               ),
               child: ClipRRect(
                 child: BottomNavigationBar(
-                  currentIndex: _getBottomNavIndex(_selectedIndex),
+                  currentIndex: _getBottomNavIndex(selectedIndex),
                   onTap: (index) {
-                    setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
+                    navProvider.setSelectedIndex(_getTabIndexFromBottomNav(index));
                   },
                   type: BottomNavigationBarType.fixed,
-                  backgroundColor: Colors.white.withOpacity(0.95), // Slight transparency to blend
+                  backgroundColor: Theme.of(context).cardColor,
                   elevation: 0,
-                  selectedItemColor: AppColors.primary,
-                  unselectedItemColor: Colors.grey.shade400,
+                  selectedItemColor: Theme.of(context).brightness == Brightness.dark ? AppColors.accent : AppColors.primary,
+                  unselectedItemColor: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.grey.shade400,
                   selectedLabelStyle: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold, 
                     fontSize: 11,
-                    color: AppColors.primary,
                   ),
                   unselectedLabelStyle: GoogleFonts.poppins(
                     fontWeight: FontWeight.w500, 
@@ -170,19 +178,19 @@ class _DashboardMainState extends State<DashboardMain> {
             )
           : null,
       body: Container(
-        decoration: BoxDecoration(gradient: AppColors.subtleGradient),
+        decoration: BoxDecoration(gradient: AppColors.getSubtleGradient(Theme.of(context).brightness == Brightness.dark)),
         child: Row(
           children: [
             if (isDesktop)
               Sidebar(
-                selectedIndex: _selectedIndex,
-                onItemSelected: (index) => setState(() => _selectedIndex = index),
+                selectedIndex: selectedIndex,
+                onItemSelected: (index) => navProvider.setSelectedIndex(index),
               ),
             Expanded(
               child: Container(
                 color: Colors.transparent,
                 child: IndexedStack(
-                  index: _selectedIndex,
+                  index: selectedIndex,
                   children: const [
                     OverviewTab(),
                     ProductsTab(),
@@ -209,11 +217,12 @@ class _DashboardMainState extends State<DashboardMain> {
   void _showCategoryDialog(BuildContext context) {}
 
   BottomNavigationBarItem _buildBottomNavItem(IconData icon, String label, int index) {
-    final isSelected = _getBottomNavIndex(_selectedIndex) == index;
+    final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final isSelected = _getBottomNavIndex(navProvider.selectedIndex) == index;
     return BottomNavigationBarItem(
       icon: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),

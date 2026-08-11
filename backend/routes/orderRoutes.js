@@ -199,4 +199,68 @@ router.delete('/admin/:id', async (req, res) => {
   }
 });
 
+// Shiprocket Integration Endpoints
+router.post('/:id/shiprocket/create', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    // Placeholder: In real scenario, call Shiprocket API here
+    order.shiprocketOrderId = 'SR-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    order.status = 'processing';
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Shiprocket order created',
+      shiprocketOrderId: order.shiprocketOrderId
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/:id/shiprocket/cancel', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    order.status = 'cancelled';
+    await order.save();
+
+    res.status(200).json({ success: true, message: 'Shiprocket order cancelled' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/:id/shiprocket/track', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    res.status(200).json({
+      success: true,
+      tracking_data: {
+        status: order.status,
+        last_update: order.updatedAt,
+        activity: 'In transit to local hub'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/:id/shiprocket/return', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    res.status(200).json({ success: true, message: 'Return pickup initiated' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
