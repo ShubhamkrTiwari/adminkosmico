@@ -41,7 +41,7 @@ class UserProvider extends ChangeNotifier {
 
   Future<Map<String, dynamic>?> fetchUserDetails(String id) async {
     try {
-      final response = await _apiClient.get('/users/$id');
+      final response = await _apiClient.get('/users/$id/details');
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         return result['data'] ?? result;
@@ -50,6 +50,19 @@ class UserProvider extends ChangeNotifier {
       debugPrint('Error fetching user details: $e');
     }
     return null;
+  }
+
+  Future<List<dynamic>> fetchUserOrders(String id) async {
+    try {
+      final response = await _apiClient.get('/users/$id/orders');
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        return result['orders'] ?? [];
+      }
+    } catch (e) {
+      debugPrint('Error fetching user orders: $e');
+    }
+    return [];
   }
 
   Future<bool> toggleUserBlock(String id) async {

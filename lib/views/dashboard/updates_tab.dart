@@ -37,16 +37,7 @@ class _UpdatesTabState extends State<UpdatesTab> {
           : null,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.15),
-              const Color(0xFFF4F7F4),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
+          gradient: AppColors.getSubtleGradient(Theme.of(context).brightness == Brightness.dark),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -64,14 +55,16 @@ class _UpdatesTabState extends State<UpdatesTab> {
   }
 
   Widget _buildHeader(bool isDesktop) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('App Updates', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('Force maintenance or publish new versions', style: TextStyle(color: AppColors.textLight)),
+            Text('App Updates', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+            Text('Force maintenance or publish new versions', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
           ],
         ),
         if (isDesktop)
@@ -105,9 +98,10 @@ class _UpdatesTabState extends State<UpdatesTab> {
           );
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[900] : Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
           ),
@@ -214,11 +208,18 @@ class _PublishUpdateDialogState extends State<PublishUpdateDialog> {
             children: [
               DropdownButtonFormField<String>(
                 value: _type,
+                isExpanded: true,
                 items: [
                   {'val': 'feature', 'label': 'New Feature'},
                   {'val': 'fix', 'label': 'Bug Fix'},
-                  {'val': 'maintenance', 'label': 'System Maintenance (Full Screen)'},
-                ].map((t) => DropdownMenuItem(value: t['val'], child: Text(t['label']!))).toList(),
+                  {'val': 'maintenance', 'label': 'Maintenance (Full Screen)'},
+                ].map((t) => DropdownMenuItem(
+                  value: t['val'], 
+                  child: Text(
+                    t['label']!,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )).toList(),
                 onChanged: (v) => setState(() => _type = v ?? 'feature'),
                 decoration: const InputDecoration(labelText: 'Update Type'),
               ),

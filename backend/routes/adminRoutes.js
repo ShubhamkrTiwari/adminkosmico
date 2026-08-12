@@ -24,13 +24,53 @@ router.get('/dashboard', async (req, res) => {
     }
 
     const totalRevenue = await Order.aggregate([
-      { $match: { paymentStatus: 'completed', status: { $ne: 'cancelled' } } },
+      { $match: { status: 'delivered', paymentStatus: 'completed' } },
       { $group: { _id: null, total: { $sum: '$total' } } }
     ]);
 
-    const totalOrders = await Order.countDocuments();
+    const totalOrders = await Order.countDocuments({ status: { $ne: 'cancelled' } });
     const totalUsers = await User.countDocuments({ isAdmin: false });
-    const totalProducts = await Product.countDocuments();
+    const totalNotifications = await mongoose.model('Notification').countDocuments();
+
+    // Daily Stats Logic
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const statsToday = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: today, $lt: tomorrow },
+          status: { $ne: 'cancelled' }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          revenue: { $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$total", 0] } }
+        }
+      }
+    ]);
+
+    const statsYesterday = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: yesterday, $lt: today },
+          status: { $ne: 'cancelled' }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          revenue: { $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$total", 0] } }
+        }
+      }
+    ]);
 
     const recentOrders = await Order.find()
       .sort({ createdAt: -1 })
@@ -47,8 +87,7 @@ router.get('/dashboard', async (req, res) => {
     const salesData = await Order.aggregate([
       {
         $match: {
-          paymentStatus: 'completed',
-          status: { $ne: 'cancelled' },
+          status: 'delivered',
           createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
         }
       },
@@ -69,7 +108,11 @@ router.get('/dashboard', async (req, res) => {
           totalRevenue: totalRevenue[0]?.total || 0,
           totalOrders,
           totalUsers,
-          totalProducts
+          totalNotifications,
+          ordersToday: statsToday[0]?.count || 0,
+          revenueToday: statsToday[0]?.revenue || 0,
+          ordersYesterday: statsYesterday[0]?.count || 0,
+          revenueYesterday: statsYesterday[0]?.revenue || 0
         },
         recentOrders,
         lowStockProducts,
