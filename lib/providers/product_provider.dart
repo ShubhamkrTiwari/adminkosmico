@@ -24,7 +24,7 @@ class ProductProvider extends ChangeNotifier {
       final token = await _apiClient.getToken();
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${AppConstants.baseUrl}/upload-image'),
+        Uri.parse('${AppConstants.baseUrl}/upload/product-image'),
       );
 
       if (token != null) {
@@ -38,7 +38,7 @@ class ProductProvider extends ChangeNotifier {
       if (kIsWeb) {
         // file is Uint8List for Web
         request.files.add(http.MultipartFile.fromBytes(
-          'imageFile',
+          'image',
           file,
           filename: filename,
           contentType: contentType,
@@ -46,7 +46,7 @@ class ProductProvider extends ChangeNotifier {
       } else {
         // file is File for Mobile/Desktop
         request.files.add(await http.MultipartFile.fromPath(
-          'imageFile',
+          'image',
           (file as File).path,
           contentType: contentType,
         ));
@@ -59,7 +59,7 @@ class ProductProvider extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        // The server usually returns 'url' or 'imageUrl'
+        // The server returns 'url' for the uploaded image
         String? path = data['url'] ?? data['imageUrl'] ?? data['data']?['url'];
         
         if (path == null) return null;
@@ -67,10 +67,9 @@ class ProductProvider extends ChangeNotifier {
         // If path is already a full URL, return it
         if (path.startsWith('http')) return path;
         
-        // Otherwise, construct the full URL
+        // Otherwise, return the relative path (Backend returns /uploads/products/...)
         if (!path.startsWith('/')) path = '/$path';
-        String rootUrl = AppConstants.baseUrl.split('/api/admin')[0];
-        return rootUrl + path;
+        return path;
       } else {
         debugPrint('Upload failed with status: ${response.statusCode}');
       }
@@ -86,12 +85,18 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final token = await _apiClient.getToken();
+      debugPrint('FETCH PRODUCTS - Token exists: ${token != null}');
+      
       String url = '/products?limit=100';
       if (category != null && category.isNotEmpty) url += '&category=$category';
       if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeComponent(search)}';
 
+      debugPrint('FETCH PRODUCTS URL: ${AppConstants.baseUrl}$url');
+      
       final response = await _apiClient.get(url);
-      debugPrint('FETCH PRODUCTS URL: $url');
+      debugPrint('FETCH PRODUCTS Response Status: ${response.statusCode}');
+      debugPrint('FETCH PRODUCTS Response Body: ${response.body}');
       
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
@@ -116,14 +121,16 @@ class ProductProvider extends ChangeNotifier {
           debugPrint('SUCCESS: Parsed ${_products.length} products');
         } else {
           debugPrint('FAILED: No list found in product response. Structure: ${result.keys}');
+          _error = 'Invalid response format from server';
           _products = [];
         }
       } else {
-        _error = 'Failed to load products: ${response.statusCode}';
+        _error = 'Failed to load products: ${response.statusCode} - ${response.body}';
+        debugPrint('Error response: ${response.body}');
       }
     } catch (e) {
       debugPrint('CRITICAL: Product fetch failed: $e');
-      _error = 'Connection error';
+      _error = 'Connection error: $e';
     }
 
     _isLoading = false;

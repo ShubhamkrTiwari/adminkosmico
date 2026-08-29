@@ -67,14 +67,26 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary, 
           brightness: Brightness.dark,
-          surface: const Color(0xFF121212),
+          surface: const Color(0xFF1E1E1E), // Lighter surface
+          onSurface: Colors.white,
+          onBackground: Colors.white,
         ),
-        cardColor: Colors.grey[900],
         scaffoldBackgroundColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF242424), // Lighter cards
+        dividerColor: Colors.white10,
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(color: Colors.white),
+          titleMedium: TextStyle(color: Colors.white),
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+        ),
         inputDecorationTheme: InputDecorationTheme(
-          hintStyle: const TextStyle(color: Colors.white54),
+          hintStyle: const TextStyle(color: Colors.white38),
           prefixIconColor: Colors.white54,
           labelStyle: const TextStyle(color: Colors.white70),
+          fillColor: Colors.white.withOpacity(0.05),
+          filled: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
       themeMode: themeProvider.themeMode,

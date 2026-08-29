@@ -11,6 +11,7 @@ import '../../providers/user_provider.dart';
 import '../../providers/payment_provider.dart';
 import '../../providers/update_provider.dart';
 import '../../providers/maintenance_provider.dart';
+import '../../providers/navigation_provider.dart';
 import '../../widgets/sidebar.dart';
 import 'overview_tab.dart';
 import 'products_tab.dart';
@@ -31,7 +32,6 @@ class DashboardMain extends StatefulWidget {
 }
 
 class _DashboardMainState extends State<DashboardMain> {
-  int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<String> _titles = [
@@ -66,6 +66,8 @@ class _DashboardMainState extends State<DashboardMain> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final navProvider = Provider.of<NavigationProvider>(context);
+    final selectedIndex = navProvider.selectedIndex;
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
@@ -84,15 +86,15 @@ class _DashboardMainState extends State<DashboardMain> {
           ),
         ),
         leading: !isDesktop ? IconButton(
-          icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+          icon: Icon(Icons.menu_rounded, color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ) : null,
         title: Text(
-          _titles[_selectedIndex],
+          _titles[selectedIndex],
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700, 
             fontSize: 18,
-            color: AppColors.textDark,
+            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.textDark,
           ),
         ),
         centerTitle: true,
@@ -121,19 +123,21 @@ class _DashboardMainState extends State<DashboardMain> {
         ],
       ),
       drawer: Sidebar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: selectedIndex,
         onItemSelected: (index) {
-          setState(() => _selectedIndex = index);
+          navProvider.setSelectedIndex(index);
           if (!isDesktop) Navigator.pop(context);
         },
       ),
       bottomNavigationBar: !isDesktop
           ? Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: themeProvider.themeMode == ThemeMode.dark ? const Color(0xFF1E1E1E) : Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: themeProvider.themeMode == ThemeMode.dark 
+                        ? Colors.black.withOpacity(0.2) 
+                        : AppColors.primary.withOpacity(0.08),
                     blurRadius: 20,
                     offset: const Offset(0, -5),
                   ),
@@ -141,48 +145,49 @@ class _DashboardMainState extends State<DashboardMain> {
               ),
               child: ClipRRect(
                 child: BottomNavigationBar(
-                  currentIndex: _getBottomNavIndex(_selectedIndex),
+                  currentIndex: _getBottomNavIndex(selectedIndex),
                   onTap: (index) {
-                    setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
+                    navProvider.setSelectedIndex(_getTabIndexFromBottomNav(index));
                   },
                   type: BottomNavigationBarType.fixed,
-                  backgroundColor: Colors.white.withOpacity(0.95), // Slight transparency to blend
+                  backgroundColor: themeProvider.themeMode == ThemeMode.dark ? const Color(0xFF1E1E1E) : Colors.white,
                   elevation: 0,
-                  selectedItemColor: AppColors.primary,
-                  unselectedItemColor: Colors.grey.shade400,
+                  selectedItemColor: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary,
+                  unselectedItemColor: themeProvider.themeMode == ThemeMode.dark ? Colors.white38 : Colors.grey.shade400,
                   selectedLabelStyle: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold, 
                     fontSize: 11,
-                    color: AppColors.primary,
                   ),
                   unselectedLabelStyle: GoogleFonts.poppins(
                     fontWeight: FontWeight.w500, 
                     fontSize: 11,
                   ),
                   items: [
-                    _buildBottomNavItem(Icons.grid_view_rounded, 'Overview', 0),
-                    _buildBottomNavItem(Icons.inventory_2_outlined, 'Products', 1),
-                    _buildBottomNavItem(Icons.shopping_bag_outlined, 'Orders', 2),
-                    _buildBottomNavItem(Icons.people_outline_rounded, 'Users', 3),
+                    _buildBottomNavItem(Icons.grid_view_rounded, 'Overview', 0, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
+                    _buildBottomNavItem(Icons.inventory_2_outlined, 'Products', 1, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
+                    _buildBottomNavItem(Icons.shopping_bag_outlined, 'Orders', 2, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
+                    _buildBottomNavItem(Icons.people_outline_rounded, 'Users', 3, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
                   ],
                 ),
               ),
             )
           : null,
       body: Container(
-        decoration: BoxDecoration(gradient: AppColors.subtleGradient),
+        decoration: BoxDecoration(
+          gradient: AppColors.getSubtleGradient(themeProvider.themeMode == ThemeMode.dark),
+        ),
         child: Row(
           children: [
             if (isDesktop)
               Sidebar(
-                selectedIndex: _selectedIndex,
-                onItemSelected: (index) => setState(() => _selectedIndex = index),
+                selectedIndex: selectedIndex,
+                onItemSelected: (index) => navProvider.setSelectedIndex(index),
               ),
             Expanded(
               child: Container(
                 color: Colors.transparent,
                 child: IndexedStack(
-                  index: _selectedIndex,
+                  index: selectedIndex,
                   children: const [
                     OverviewTab(),
                     ProductsTab(),
@@ -208,14 +213,16 @@ class _DashboardMainState extends State<DashboardMain> {
 
   void _showCategoryDialog(BuildContext context) {}
 
-  BottomNavigationBarItem _buildBottomNavItem(IconData icon, String label, int index) {
-    final isSelected = _getBottomNavIndex(_selectedIndex) == index;
+  BottomNavigationBarItem _buildBottomNavItem(IconData icon, String label, int index, bool isDark, int selectedIndex) {
+    final isSelected = _getBottomNavIndex(selectedIndex) == index;
     return BottomNavigationBarItem(
       icon: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected 
+              ? (isDark ? Colors.white.withOpacity(0.12) : AppColors.primary.withOpacity(0.1)) 
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(icon),

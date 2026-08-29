@@ -25,14 +25,16 @@ class AppColors {
     ],
   );
 
+  static Gradient? get subtleGradient => null;
+
   static LinearGradient getSubtleGradient(bool isDark) {
     return LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: isDark 
         ? [
-            const Color(0xFF121212),
-            const Color(0xFF051B07),
+            const Color(0xFF1E1E1E), // Softer grey
+            const Color(0xFF121212), // Deeper grey
           ]
         : [
             const Color(0xFF81C784).withOpacity(0.35), // Vibrant Mint Green
@@ -47,6 +49,7 @@ class AppConstants {
   static const String appName = 'Kosmico Wellness Admin';
   // Production API Base URL on Port 5000
   static const String baseUrl = 'http://3.7.180.215:5000/api/admin';
+  static const String rootUrl = 'http://3.7.180.215:5000';
 
   
   static const double sidebarWidth = 260.0;

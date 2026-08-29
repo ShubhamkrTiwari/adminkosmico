@@ -186,6 +186,25 @@ class _ProductsTabState extends State<ProductsTab> {
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red, fontSize: 16)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => provider.fetchProducts(),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Retry'),
+                )
+              ],
+            ),
+          );
+        }
+
         final filteredProducts = provider.products;
 
         if (filteredProducts.isEmpty) {
@@ -196,6 +215,9 @@ class _ProductsTabState extends State<ProductsTab> {
                 const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
                 const Text('No products found', style: TextStyle(color: Colors.black54, fontSize: 16)),
+                const SizedBox(height: 5),
+                if (provider.error != null)
+                  Text(provider.error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () => provider.fetchProducts(),
@@ -754,6 +776,7 @@ class _ProductDialogState extends State<ProductDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _imageController,
+                onChanged: (v) => setState(() {}), // Refresh preview
                 decoration: InputDecoration(
                   labelText: 'Image URL',
                   hintText: 'https://example.com/product.jpg',
@@ -767,6 +790,35 @@ class _ProductDialogState extends State<ProductDialog> {
                         ),
                 ),
               ),
+              if (_imageController.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 150,
+                      width: double.infinity,
+                      child: CachedNetworkImage(
+                        imageUrl: _imageController.text.startsWith('http') 
+                            ? _imageController.text 
+                            : (AppConstants.rootUrl + (_imageController.text.startsWith('/') ? '' : '/') + _imageController.text),
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[200],
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.broken_image_outlined, color: Colors.grey, size: 40),
+                              SizedBox(height: 8),
+                              Text('Invalid image URL or path', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descController,

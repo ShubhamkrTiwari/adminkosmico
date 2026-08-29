@@ -1,3 +1,5 @@
+import '../core/constants.dart';
+
 class Product {
   final String id;
   final String name;
@@ -68,6 +70,23 @@ class Product {
       }
     }
 
+    String? img = json['image']?.toString();
+    if (img != null && img.isNotEmpty && !img.startsWith('http')) {
+      // Ensure it starts with /uploads
+      if (img.contains('uploads')) {
+        // If it's something like "uploads/products/..." fix it to "/uploads/products/..."
+        String path = img;
+        if (!path.startsWith('/')) {
+          // If it's "public/uploads/..." or similar, we might need to handle it, 
+          // but based on backend code it should be "uploads/products/..."
+          if (path.startsWith('uploads')) {
+            path = '/$path';
+          }
+        }
+        img = AppConstants.rootUrl + path;
+      }
+    }
+
     return Product(
       id: json['_id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -76,7 +95,7 @@ class Product {
       stock: parsedStock,
       categoryId: catId,
       categoryName: catName,
-      image: json['image']?.toString(),
+      image: img,
       productLink: json['productLink']?.toString(),
       ingredients: json['ingredients']?.toString(),
       isVisible: visible,

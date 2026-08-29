@@ -261,24 +261,39 @@ class _OverviewTabState extends State<OverviewTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.white,
+        color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
       ),
-      child: IconButton(
-        icon: Icon(icon, color: isDark ? Colors.white : AppColors.textDark, size: 22),
-        onPressed: onTap,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Icon(icon, color: isDark ? Colors.white : AppColors.textDark, size: 22),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSectionWrapper({required String title, required Widget child}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleMedium?.color)),
+          Text(
+            title, 
+            style: GoogleFonts.poppins(
+              fontSize: 18, 
+              fontWeight: FontWeight.bold, 
+              color: isDark ? Colors.white : Theme.of(context).textTheme.titleMedium?.color,
+            ),
+          ),
           const SizedBox(height: 16),
           child,
         ],

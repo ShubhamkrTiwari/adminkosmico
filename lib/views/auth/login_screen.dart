@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     );
                                   },
                                   style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.primary.withOpacity(0.8),
+                                    foregroundColor: isDark ? Colors.greenAccent : AppColors.primary.withOpacity(0.8),
                                   ),
                                   child: const Text(
                                     'Forgot Password?',
@@ -201,10 +201,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       context,
                                       MaterialPageRoute(builder: (_) => const SignupScreen()),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       'Create Account',
                                       style: TextStyle(
-                                        color: AppColors.primary,
+                                        color: isDark ? Colors.greenAccent : AppColors.primary,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
