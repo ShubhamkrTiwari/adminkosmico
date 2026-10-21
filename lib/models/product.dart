@@ -5,6 +5,7 @@ class Product {
   final String name;
   final String description;
   final double price;
+  final double? originalPrice;
   final int stock;
   final String categoryId;
   final String? categoryName;
@@ -19,6 +20,7 @@ class Product {
     required this.name,
     required this.description,
     required this.price,
+    this.originalPrice,
     required this.stock,
     required this.categoryId,
     this.categoryName,
@@ -71,7 +73,7 @@ class Product {
     }
 
     String? img = json['image']?.toString();
-    if (img != null && img.isNotEmpty && !img.startsWith('http')) {
+    if (img != null && img.isNotEmpty && !img.startsWith('http') && !img.startsWith('data:image')) {
       // Ensure it starts with /uploads
       if (img.contains('uploads')) {
         // If it's something like "uploads/products/..." fix it to "/uploads/products/..."
@@ -92,6 +94,7 @@ class Product {
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      originalPrice: (json['originalPrice'] as num?)?.toDouble(),
       stock: parsedStock,
       categoryId: catId,
       categoryName: catName,
@@ -108,6 +111,7 @@ class Product {
       'name': name,
       'description': description,
       'price': price,
+      'originalPrice': originalPrice,
       'stock': stock,
       'category': categoryId,
       'image': image,

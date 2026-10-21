@@ -23,6 +23,7 @@ import 'payments_tab.dart';
 import 'updates_tab.dart';
 import 'maintenance_tab.dart';
 import 'coupons_tab.dart';
+import 'subscriptions_tab.dart';
 
 class DashboardMain extends StatefulWidget {
   const DashboardMain({super.key});
@@ -44,7 +45,8 @@ class _DashboardMainState extends State<DashboardMain> {
     'Notifications',
     'Payments & Transactions',
     'App Updates',
-    'Maintenance'
+    'Maintenance',
+    'Subscription Management'
   ];
 
   int _getBottomNavIndex(int tabIndex) {
@@ -199,6 +201,7 @@ class _DashboardMainState extends State<DashboardMain> {
                     PaymentsTab(),
                     UpdatesTab(),
                     MaintenanceTab(),
+                    SubscriptionsTab(),
                   ],
                 ),
               ),

@@ -1,0 +1,5 @@
+- `[x]` Fix overflow in `ProductsTab` mobile cards
+- `[x]` Fix overflow in `OrdersTab` mobile cards (Customer name & Bottom row)
+- `[x]` Adjust `DashboardMain` Bottom Nav padding for narrow screens
+- `[x]` Add truncation to `DashboardMain` AppBar title
+- `[x]` Create walkthrough summary

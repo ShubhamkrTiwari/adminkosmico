@@ -92,11 +92,29 @@ class MyApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
+          // Staying on a splash while the stored token is being validated keeps
+          // a slow /me response from flashing the login screen.
+          if (auth.isBooting && !auth.isAuthenticated) {
+            return const _AuthSplash();
+          }
           if (auth.isAuthenticated) {
             return const DashboardMain();
           }
           return const LoginScreen();
         },
+      ),
+    );
+  }
+}
+
+class _AuthSplash extends StatelessWidget {
+  const _AuthSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
   }

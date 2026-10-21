@@ -101,6 +101,7 @@ class Sidebar extends StatelessWidget {
                   _buildNavItem(context, 7, Icons.account_balance_wallet_outlined, 'Payments', isDark),
                   _buildNavItem(context, 8, Icons.system_update_outlined, 'App Updates', isDark),
                   _buildNavItem(context, 9, Icons.settings_outlined, 'Maintenance', isDark),
+                  _buildNavItem(context, 10, Icons.card_membership_rounded, 'Subscription', isDark),
                 ],
               ),
             ),

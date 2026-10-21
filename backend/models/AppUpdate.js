@@ -13,21 +13,32 @@ const appUpdateSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['feature', 'fix', 'patch', 'maintenance'],
     required: [true, 'Type is required']
   },
   notes: {
     type: String,
-    required: [true, 'Notes are required'],
     trim: true
+  },
+  releaseNotes: {
+    type: String,
+    trim: true
+  },
+  playStoreUrl: {
+    type: String,
+    trim: true
+  },
+  isUpdateAvailable: {
+    type: Boolean,
+    default: true
   },
   publishStatus: {
     type: String,
     enum: ['draft', 'published', 'archived'],
-    default: 'draft'
+    default: 'published'
   },
   publishedAt: {
-    type: Date
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true

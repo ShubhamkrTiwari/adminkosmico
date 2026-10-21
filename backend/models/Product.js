@@ -6,6 +6,12 @@ const productSchema = new mongoose.Schema({
     required: [true, 'Product name is required'],
     trim: true
   },
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
@@ -15,6 +21,10 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative']
+  },
+  originalPrice: {
+    type: Number,
+    min: [0, 'Original price cannot be negative']
   },
   stock: {
     type: Number,
@@ -28,8 +38,8 @@ const productSchema = new mongoose.Schema({
     trim: true
   },
   ingredients: {
-    type: String,
-    trim: true
+    type: mongoose.Schema.Types.Mixed,
+    default: ''
   },
   productLink: {
     type: String,
@@ -46,9 +56,36 @@ const productSchema = new mongoose.Schema({
   },
   images: [{
     type: String
-  }]
+  }],
+  keyBenefits: [String],
+  highlights: [String],
+  brand: {
+    type: String,
+    trim: true
+  },
+  sku: {
+    type: String,
+    trim: true
+  },
+  shelfLife: {
+    type: String,
+    trim: true
+  },
+  madeIn: {
+    type: String,
+    trim: true
+  }
 }, {
   timestamps: true
+});
+
+// Pre-save hook to generate unique slug
+productSchema.pre('save', function(next) {
+  if (this.isModified('name') || !this.slug) {
+    const baseSlug = this.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+    this.slug = `${baseSlug}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  }
+  next();
 });
 
 module.exports = mongoose.model('Product', productSchema);

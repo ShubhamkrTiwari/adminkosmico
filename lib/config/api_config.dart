@@ -3,7 +3,7 @@ class ApiConfig {
   // For development, use localhost or your server IP
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://3.7.180.215:5000',
+    defaultValue: 'https://api.kosmicowellness.com/api',
   );
   
   static const int timeoutDuration = 30;

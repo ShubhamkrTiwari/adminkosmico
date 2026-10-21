@@ -18,60 +18,78 @@ class ProductProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Image Upload logic - Updated with MIME type detection
+  // Image Upload logic - Updated with fallback endpoints and Base64 Data URL fallback
   Future<String?> uploadImage(dynamic file, String filename) async {
     try {
       final token = await _apiClient.getToken();
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${AppConstants.baseUrl}/upload/product-image'),
-      );
+      
+      final endpoints = [
+        '${AppConstants.baseUrl}/upload/product-image',
+        '${AppConstants.baseUrl}/upload',
+        '${AppConstants.rootUrl}/api/upload',
+        '${AppConstants.baseUrl}/products/upload',
+      ];
 
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
+      for (String urlStr in endpoints) {
+        try {
+          var request = http.MultipartRequest('POST', Uri.parse(urlStr));
+
+          if (token != null) {
+            request.headers['Authorization'] = 'Bearer $token';
+          }
+
+          final ext = filename.split('.').last.toLowerCase();
+          final MediaType contentType = MediaType('image', ext == 'jpg' ? 'jpeg' : (ext == 'png' ? 'png' : 'jpeg'));
+
+          if (kIsWeb) {
+            request.files.add(http.MultipartFile.fromBytes(
+              'image',
+              file,
+              filename: filename,
+              contentType: contentType,
+            ));
+          } else {
+            request.files.add(await http.MultipartFile.fromPath(
+              'image',
+              (file as File).path,
+              contentType: contentType,
+            ));
+          }
+
+          var streamedResponse = await request.send();
+          var response = await http.Response.fromStream(streamedResponse);
+
+          debugPrint('Upload Response ($urlStr): ${response.statusCode} - ${response.body}');
+
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            final data = jsonDecode(response.body);
+            String? path = data['url'] ?? data['imageUrl'] ?? data['data']?['url'];
+            
+            if (path != null) {
+              if (path.startsWith('http')) return path;
+              if (!path.startsWith('/')) path = '/$path';
+              return AppConstants.rootUrl + path;
+            }
+          }
+        } catch (apiErr) {
+          debugPrint('Endpoint $urlStr failed: $apiErr');
+        }
       }
 
-      // Determine extension and set correct MediaType
-      final ext = filename.split('.').last.toLowerCase();
-      final MediaType contentType = MediaType('image', ext == 'jpg' ? 'jpeg' : ext);
-
+      // FALLBACK: If server upload fails, convert image bytes to Base64 Data URL
+      debugPrint('Server upload endpoints failed. Falling back to Base64 Data URL.');
+      Uint8List? bytes;
       if (kIsWeb) {
-        // file is Uint8List for Web
-        request.files.add(http.MultipartFile.fromBytes(
-          'image',
-          file,
-          filename: filename,
-          contentType: contentType,
-        ));
+        bytes = file as Uint8List?;
       } else {
-        // file is File for Mobile/Desktop
-        request.files.add(await http.MultipartFile.fromPath(
-          'image',
-          (file as File).path,
-          contentType: contentType,
-        ));
+        bytes = await (file as File).readAsBytes();
       }
 
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      debugPrint('Upload Response: ${response.statusCode} - ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        // The server returns 'url' for the uploaded image
-        String? path = data['url'] ?? data['imageUrl'] ?? data['data']?['url'];
-        
-        if (path == null) return null;
-        
-        // If path is already a full URL, return it
-        if (path.startsWith('http')) return path;
-        
-        // Otherwise, return the relative path (Backend returns /uploads/products/...)
-        if (!path.startsWith('/')) path = '/$path';
-        return path;
-      } else {
-        debugPrint('Upload failed with status: ${response.statusCode}');
+      if (bytes != null) {
+        final ext = filename.split('.').last.toLowerCase();
+        final mimeType = ext == 'png' ? 'image/png' : 'image/jpeg';
+        final base64String = base64Encode(bytes);
+        return 'data:$mimeType;base64,$base64String';
       }
     } catch (e) {
       debugPrint('Upload error detail: $e');
@@ -138,29 +156,71 @@ class ProductProvider extends ChangeNotifier {
   }
 
   Future<bool> addProduct(Map<String, dynamic> productData) async {
+    _error = null;
     try {
-      final response = await _apiClient.post('/products/admin/add-product', productData);
-      debugPrint('Add Product Response: ${response.statusCode} - ${response.body}');
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        fetchProducts();
-        return true;
+      final endpoints = [
+        '/products/admin/add-product',
+        '/products',
+        '/admin/products',
+      ];
+
+      for (String endpoint in endpoints) {
+        try {
+          final response = await _apiClient.post(endpoint, productData);
+          debugPrint('Add Product Response ($endpoint): ${response.statusCode} - ${response.body}');
+          if (response.statusCode == 201 || response.statusCode == 200) {
+            fetchProducts();
+            return true;
+          } else {
+            try {
+              final errData = jsonDecode(response.body);
+              if (errData['message'] != null) {
+                _error = errData['message'];
+              }
+            } catch (_) {}
+          }
+        } catch (apiErr) {
+          debugPrint('Endpoint $endpoint failed: $apiErr');
+        }
       }
     } catch (e) {
       debugPrint('Error adding product: $e');
+      _error = e.toString();
     }
     return false;
   }
 
   Future<bool> updateProduct(String id, Map<String, dynamic> productData) async {
+    _error = null;
     try {
-      final response = await _apiClient.put('/products/admin/update-product/$id', productData);
-      debugPrint('Update Product Response: ${response.statusCode} - ${response.body}');
-      if (response.statusCode == 200) {
-        fetchProducts();
-        return true;
+      final endpoints = [
+        '/products/admin/update-product/$id',
+        '/products/$id',
+        '/admin/products/$id',
+      ];
+
+      for (String endpoint in endpoints) {
+        try {
+          final response = await _apiClient.put(endpoint, productData);
+          debugPrint('Update Product Response ($endpoint): ${response.statusCode} - ${response.body}');
+          if (response.statusCode == 200) {
+            fetchProducts();
+            return true;
+          } else {
+            try {
+              final errData = jsonDecode(response.body);
+              if (errData['message'] != null) {
+                _error = errData['message'];
+              }
+            } catch (_) {}
+          }
+        } catch (apiErr) {
+          debugPrint('Endpoint $endpoint failed: $apiErr');
+        }
       }
     } catch (e) {
       debugPrint('Error updating product: $e');
+      _error = e.toString();
     }
     return false;
   }

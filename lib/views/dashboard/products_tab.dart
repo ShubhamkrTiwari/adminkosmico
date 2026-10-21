@@ -36,6 +36,56 @@ class _ProductsTabState extends State<ProductsTab> {
     });
   }
 
+  Widget _buildProductImage(String? imageUrl, {double width = 80, double height = 80}) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: AppColors.primary.withOpacity(0.05),
+        child: Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: width > 50 ? 24 : 20),
+      );
+    }
+
+    if (imageUrl.startsWith('data:image')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        return Image.memory(
+          base64Decode(base64String),
+          width: width,
+          height: height,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            width: width,
+            height: height,
+            color: AppColors.primary.withOpacity(0.05),
+            child: const Icon(Icons.broken_image_outlined, color: Colors.grey, size: 20),
+          ),
+        );
+      } catch (e) {
+        return Container(
+          width: width,
+          height: height,
+          color: AppColors.primary.withOpacity(0.05),
+          child: const Icon(Icons.broken_image_outlined, color: Colors.grey, size: 20),
+        );
+      }
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Container(color: AppColors.primary.withOpacity(0.05)),
+      errorWidget: (context, url, error) => Container(
+        width: width,
+        height: height,
+        color: AppColors.primary.withOpacity(0.05),
+        child: const Icon(Icons.broken_image_outlined, color: Colors.grey, size: 20),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
@@ -188,19 +238,22 @@ class _ProductsTabState extends State<ProductsTab> {
 
         if (provider.error != null) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red, fontSize: 16)),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () => provider.fetchProducts(),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry'),
-                )
-              ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red, fontSize: 16), textAlign: TextAlign.center),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => provider.fetchProducts(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry'),
+                  )
+                ],
+              ),
             ),
           );
         }
@@ -209,22 +262,25 @@ class _ProductsTabState extends State<ProductsTab> {
 
         if (filteredProducts.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                const Text('No products found', style: TextStyle(color: Colors.black54, fontSize: 16)),
-                const SizedBox(height: 5),
-                if (provider.error != null)
-                  Text(provider.error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () => provider.fetchProducts(),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Refresh Products'),
-                )
-              ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('No products found', style: TextStyle(color: Colors.black54, fontSize: 16)),
+                  const SizedBox(height: 5),
+                  if (provider.error != null)
+                    Text(provider.error!, style: const TextStyle(color: Colors.red, fontSize: 12), textAlign: TextAlign.center),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => provider.fetchProducts(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Refresh Products'),
+                  )
+                ],
+              ),
             ),
           );
         }
@@ -296,17 +352,7 @@ class _ProductsTabState extends State<ProductsTab> {
                     child: SizedBox(
                       width: 80,
                       height: 80,
-                      child: p.image != null && p.image!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: p.image!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(color: AppColors.primary.withOpacity(0.05)),
-                              errorWidget: (context, url, error) => const Icon(Icons.broken_image_outlined),
-                            )
-                          : Container(
-                              color: AppColors.primary.withOpacity(0.05),
-                              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
-                            ),
+                      child: _buildProductImage(p.image, width: 80, height: 80),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -409,23 +455,7 @@ class _ProductsTabState extends State<ProductsTab> {
             child: SizedBox(
               width: 44,
               height: 44,
-              child: p.image != null && p.image!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: p.image!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: AppColors.primary.withOpacity(0.05),
-                        child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: AppColors.primary.withOpacity(0.05),
-                        child: const Icon(Icons.broken_image_outlined, size: 20, color: AppColors.primary),
-                      ),
-                    )
-                  : Container(
-                      color: AppColors.primary.withOpacity(0.05),
-                      child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.primary),
-                    ),
+              child: _buildProductImage(p.image, width: 44, height: 44),
             ),
           ),
           const SizedBox(width: 16),
@@ -561,6 +591,7 @@ class _ProductDialogState extends State<ProductDialog> {
   final ApiClient _apiClient = ApiClient();
   late TextEditingController _nameController;
   late TextEditingController _priceController;
+  late TextEditingController _originalPriceController;
   late TextEditingController _stockController;
   late TextEditingController _descController;
   late TextEditingController _imageController;
@@ -621,6 +652,7 @@ class _ProductDialogState extends State<ProductDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.product?.name);
     _priceController = TextEditingController(text: widget.product?.price.toString());
+    _originalPriceController = TextEditingController(text: widget.product?.originalPrice?.toString() ?? '');
     _stockController = TextEditingController(text: widget.product?.stock.toString());
     _descController = TextEditingController(text: widget.product?.description);
     _imageController = TextEditingController(text: widget.product?.image);
@@ -631,15 +663,45 @@ class _ProductDialogState extends State<ProductDialog> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final catProvider = context.read<CategoryProvider>();
       if (catProvider.categories.isEmpty) {
-        catProvider.fetchCategories();
+        catProvider.fetchCategories().then((_) {
+          _matchCategory();
+        });
+      } else {
+        _matchCategory();
       }
     });
+  }
+
+  void _matchCategory() {
+    final catProvider = context.read<CategoryProvider>();
+    final categories = catProvider.categories;
+    if (categories.isEmpty) return;
+
+    bool matchById = categories.any((c) => c.id == _selectedCategory);
+    if (!matchById) {
+      final matchedCat = categories.cast<model.Category?>().firstWhere(
+        (c) => c?.id == _selectedCategory || 
+               c?.name.toLowerCase() == widget.product?.categoryName?.toLowerCase() ||
+               c?.name.toLowerCase() == _selectedCategory?.toLowerCase(),
+        orElse: () => null,
+      );
+      if (matchedCat != null) {
+        setState(() {
+          _selectedCategory = matchedCat.id;
+        });
+      } else if (categories.isNotEmpty) {
+        setState(() {
+          _selectedCategory = categories.first.id;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
+    _originalPriceController.dispose();
     _stockController.dispose();
     _descController.dispose();
     _imageController.dispose();
@@ -733,13 +795,31 @@ class _ProductDialogState extends State<ProductDialog> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      controller: _originalPriceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Original Price (MRP) ₹',
+                        hintText: 'e.g. 999',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
                       controller: _priceController,
-                      decoration: const InputDecoration(labelText: 'Price (₹)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Selling Price ₹',
+                        hintText: 'e.g. 499',
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
                   Expanded(
                     child: TextFormField(
                       controller: _stockController,
@@ -798,24 +878,40 @@ class _ProductDialogState extends State<ProductDialog> {
                     child: SizedBox(
                       height: 150,
                       width: double.infinity,
-                      child: CachedNetworkImage(
-                        imageUrl: _imageController.text.startsWith('http') 
-                            ? _imageController.text 
-                            : (AppConstants.rootUrl + (_imageController.text.startsWith('/') ? '' : '/') + _imageController.text),
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[200],
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.broken_image_outlined, color: Colors.grey, size: 40),
-                              SizedBox(height: 8),
-                              Text('Invalid image URL or path', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      ),
+                      child: _imageController.text.startsWith('data:image')
+                          ? Image.memory(
+                              base64Decode(_imageController.text.split(',').last),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.grey[200],
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image_outlined, color: Colors.grey, size: 40),
+                                    SizedBox(height: 8),
+                                    Text('Invalid base64 image data', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: _imageController.text.startsWith('http') 
+                                  ? _imageController.text 
+                                  : (AppConstants.rootUrl + (_imageController.text.startsWith('/') ? '' : '/') + _imageController.text),
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey[200],
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image_outlined, color: Colors.grey, size: 40),
+                                    SizedBox(height: 8),
+                                    Text('Invalid image URL or path', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -844,27 +940,71 @@ class _ProductDialogState extends State<ProductDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
+              final catProvider = context.read<CategoryProvider>();
+              if (_selectedCategory == null && catProvider.categories.isNotEmpty) {
+                setState(() {
+                  _selectedCategory = catProvider.categories.first.id;
+                });
+              }
+
+              if (_selectedCategory == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please select a category'), backgroundColor: Colors.orange),
+                );
+                return;
+              }
+
               final data = {
-                'name': _nameController.text,
+                'name': _nameController.text.trim(),
                 'category': _selectedCategory,
                 'price': double.tryParse(_priceController.text) ?? 0.0,
+                'originalPrice': double.tryParse(_originalPriceController.text.trim()) != null && double.parse(_originalPriceController.text.trim()) > 0
+                    ? double.parse(_originalPriceController.text.trim())
+                    : null,
                 'stock': int.tryParse(_stockController.text) ?? 0,
-                'description': _descController.text,
-                'image': _imageController.text,
-                'productLink': _productLinkController.text,
+                'description': _descController.text.trim(),
+                'image': _imageController.text.trim(),
+                'productLink': _productLinkController.text.trim(),
                 'visibility': _isVisible,
               };
 
+              debugPrint('Saving product with data: $data');
+
               bool success;
+              final productProvider = context.read<ProductProvider>();
               if (widget.product == null) {
-                success = await context.read<ProductProvider>().addProduct(data);
+                success = await productProvider.addProduct(data);
               } else {
-                success = await context.read<ProductProvider>().updateProduct(widget.product!.id, data);
+                success = await productProvider.updateProduct(widget.product!.id, data);
               }
 
-              if (success && mounted) {
-                Navigator.of(context).pop();
+              if (mounted) {
+                if (success) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(widget.product == null ? 'Product added successfully' : 'Product updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  final errorMsg = productProvider.error ?? 'Failed to save product. Please check console/network response.';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMsg),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                }
               }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please fill in all required fields correctly.'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           },
           child: const Text('Save Product'),
