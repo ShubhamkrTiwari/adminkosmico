@@ -1,47 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:device_preview/device_preview.dart';
-import 'core/constants.dart';
-import 'providers/auth_provider.dart';
-import 'providers/theme_provider.dart';
-import 'providers/navigation_provider.dart';
-import 'providers/dashboard_provider.dart';
-import 'providers/product_provider.dart';
-import 'providers/category_provider.dart';
-import 'providers/order_provider.dart';
-import 'providers/user_provider.dart';
-import 'providers/notification_provider.dart';
-import 'providers/payment_provider.dart';
-import 'providers/update_provider.dart';
-import 'providers/maintenance_provider.dart';
-import 'providers/coupon_provider.dart';
-import 'views/auth/login_screen.dart';
-import 'views/dashboard/dashboard_main.dart';
+import 'package:adminkosmico/core/constants.dart';
+import 'package:adminkosmico/providers/auth_provider.dart';
+import 'package:adminkosmico/providers/theme_provider.dart';
+import 'package:adminkosmico/providers/navigation_provider.dart';
+import 'package:adminkosmico/providers/dashboard_provider.dart';
+import 'package:adminkosmico/providers/product_provider.dart';
+import 'package:adminkosmico/providers/category_provider.dart';
+import 'package:adminkosmico/providers/order_provider.dart';
+import 'package:adminkosmico/providers/user_provider.dart';
+import 'package:adminkosmico/providers/notification_provider.dart';
+import 'package:adminkosmico/providers/payment_provider.dart';
+import 'package:adminkosmico/providers/update_provider.dart';
+import 'package:adminkosmico/providers/maintenance_provider.dart';
+import 'package:adminkosmico/providers/coupon_provider.dart';
+import 'package:adminkosmico/providers/subscription_provider.dart';
+import 'package:adminkosmico/providers/lead_provider.dart';
+import 'package:adminkosmico/views/auth/login_screen.dart';
+import 'package:adminkosmico/views/dashboard/dashboard_main.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    DevicePreview(
-      enabled: !kReleaseMode,
-      builder: (context) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(create: (_) => ThemeProvider()),
-          ChangeNotifierProvider(create: (_) => NavigationProvider()),
-          ChangeNotifierProvider(create: (_) => DashboardProvider()),
-          ChangeNotifierProvider(create: (_) => ProductProvider()),
-          ChangeNotifierProvider(create: (_) => CategoryProvider()),
-          ChangeNotifierProvider(create: (_) => OrderProvider()),
-          ChangeNotifierProvider(create: (_) => UserProvider()),
-          ChangeNotifierProvider(create: (_) => NotificationProvider()),
-          ChangeNotifierProvider(create: (_) => PaymentProvider()),
-          ChangeNotifierProvider(create: (_) => UpdateProvider()),
-          ChangeNotifierProvider(create: (_) => MaintenanceProvider()),
-          ChangeNotifierProvider(create: (_) => CouponProvider()),
-        ],
-        child: const MyApp(),
-      ),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => UpdateProvider()),
+        ChangeNotifierProvider(create: (_) => MaintenanceProvider()),
+        ChangeNotifierProvider(create: (_) => CouponProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => LeadProvider()),
+      ],
+      child: const MyApp(),
     ),
   );
 }
@@ -55,9 +55,6 @@ class MyApp extends StatelessWidget {
     
     return MaterialApp(
       title: 'Kosmico Wellness Admin',
-      useInheritedMediaQuery: true,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

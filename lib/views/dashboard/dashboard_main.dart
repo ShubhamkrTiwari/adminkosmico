@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/constants.dart';
-import '../../providers/theme_provider.dart';
-import '../../providers/dashboard_provider.dart';
-import '../../providers/product_provider.dart';
-import '../../providers/category_provider.dart';
-import '../../providers/order_provider.dart';
-import '../../providers/user_provider.dart';
-import '../../providers/payment_provider.dart';
-import '../../providers/update_provider.dart';
-import '../../providers/maintenance_provider.dart';
-import '../../providers/navigation_provider.dart';
-import '../../widgets/sidebar.dart';
-import 'overview_tab.dart';
-import 'products_tab.dart';
-import 'categories_tab.dart';
-import 'orders_tab.dart';
-import 'users_tab.dart';
-import 'notifications_tab.dart';
-import 'payments_tab.dart';
-import 'updates_tab.dart';
-import 'maintenance_tab.dart';
-import 'coupons_tab.dart';
-import 'subscriptions_tab.dart';
+import 'package:adminkosmico/core/constants.dart';
+import 'package:adminkosmico/providers/theme_provider.dart';
+import 'package:adminkosmico/providers/dashboard_provider.dart';
+import 'package:adminkosmico/providers/product_provider.dart';
+import 'package:adminkosmico/providers/category_provider.dart';
+import 'package:adminkosmico/providers/maintenance_provider.dart';
+import 'package:adminkosmico/providers/navigation_provider.dart';
+import 'package:adminkosmico/widgets/sidebar.dart';
+import 'package:adminkosmico/widgets/liquid_floating_bar.dart';
+import 'package:adminkosmico/views/dashboard/overview_tab.dart';
+import 'package:adminkosmico/views/dashboard/products_tab.dart';
+import 'package:adminkosmico/views/dashboard/categories_tab.dart';
+import 'package:adminkosmico/views/dashboard/orders_tab.dart';
+import 'package:adminkosmico/views/dashboard/users_tab.dart';
+import 'package:adminkosmico/views/dashboard/notifications_tab.dart';
+import 'package:adminkosmico/views/dashboard/payments_tab.dart';
+import 'package:adminkosmico/views/dashboard/updates_tab.dart';
+import 'package:adminkosmico/views/dashboard/maintenance_tab.dart';
+import 'package:adminkosmico/views/dashboard/coupons_tab.dart';
+import 'package:adminkosmico/views/dashboard/subscriptions_tab.dart';
+import 'package:adminkosmico/views/dashboard/whatsapp_tab.dart';
+import 'package:adminkosmico/views/dashboard/leads_tab.dart';
 
 class DashboardMain extends StatefulWidget {
   const DashboardMain({super.key});
@@ -42,7 +41,9 @@ class _DashboardMainState extends State<DashboardMain> {
     'Coupon Management',
     'Order Management',
     'User Management',
+    'Leads Management',
     'Notifications',
+    'WhatsApp Messaging',
     'Payments & Transactions',
     'App Updates',
     'Maintenance',
@@ -87,8 +88,8 @@ class _DashboardMainState extends State<DashboardMain> {
             ),
           ),
         ),
-        leading: !isDesktop ? IconButton(
-          icon: Icon(Icons.menu_rounded, color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary),
+        leading: !isDesktop ? _AnimatedMenuButton(
+          color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary,
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ) : null,
         title: Text(
@@ -132,46 +133,12 @@ class _DashboardMainState extends State<DashboardMain> {
         },
       ),
       bottomNavigationBar: !isDesktop
-          ? Container(
-              decoration: BoxDecoration(
-                color: themeProvider.themeMode == ThemeMode.dark ? const Color(0xFF1E1E1E) : Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: themeProvider.themeMode == ThemeMode.dark 
-                        ? Colors.black.withOpacity(0.2) 
-                        : AppColors.primary.withOpacity(0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                child: BottomNavigationBar(
-                  currentIndex: _getBottomNavIndex(selectedIndex),
-                  onTap: (index) {
-                    navProvider.setSelectedIndex(_getTabIndexFromBottomNav(index));
-                  },
-                  type: BottomNavigationBarType.fixed,
-                  backgroundColor: themeProvider.themeMode == ThemeMode.dark ? const Color(0xFF1E1E1E) : Colors.white,
-                  elevation: 0,
-                  selectedItemColor: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary,
-                  unselectedItemColor: themeProvider.themeMode == ThemeMode.dark ? Colors.white38 : Colors.grey.shade400,
-                  selectedLabelStyle: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold, 
-                    fontSize: 11,
-                  ),
-                  unselectedLabelStyle: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w500, 
-                    fontSize: 11,
-                  ),
-                  items: [
-                    _buildBottomNavItem(Icons.grid_view_rounded, 'Overview', 0, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
-                    _buildBottomNavItem(Icons.inventory_2_outlined, 'Products', 1, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
-                    _buildBottomNavItem(Icons.shopping_bag_outlined, 'Orders', 2, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
-                    _buildBottomNavItem(Icons.people_outline_rounded, 'Users', 3, themeProvider.themeMode == ThemeMode.dark, selectedIndex),
-                  ],
-                ),
-              ),
+          ? LiquidFloatingBar(
+              currentIndex: _getBottomNavIndex(selectedIndex),
+              onTap: (index) {
+                navProvider.setSelectedIndex(_getTabIndexFromBottomNav(index));
+              },
+              isDark: themeProvider.themeMode == ThemeMode.dark,
             )
           : null,
       body: Container(
@@ -190,18 +157,20 @@ class _DashboardMainState extends State<DashboardMain> {
                 color: Colors.transparent,
                 child: IndexedStack(
                   index: selectedIndex,
-                  children: const [
-                    OverviewTab(),
-                    ProductsTab(),
-                    CategoriesTab(),
-                    CouponsTab(),
-                    OrdersTab(),
-                    UsersTab(),
-                    NotificationsTab(),
-                    PaymentsTab(),
-                    UpdatesTab(),
-                    MaintenanceTab(),
-                    SubscriptionsTab(),
+                  children: [
+                    const OverviewTab(),
+                    const ProductsTab(),
+                    const CategoriesTab(),
+                    const CouponsTab(),
+                    const OrdersTab(),
+                    const UsersTab(),
+                    const LeadsTab(),
+                    const NotificationsTab(),
+                    const WhatsAppTab(),
+                    const PaymentsTab(),
+                    const UpdatesTab(),
+                    const MaintenanceTab(),
+                    const SubscriptionsTab(),
                   ],
                 ),
               ),
@@ -215,22 +184,52 @@ class _DashboardMainState extends State<DashboardMain> {
   void _showProductDialog(BuildContext context) {}
 
   void _showCategoryDialog(BuildContext context) {}
+}
 
-  BottomNavigationBarItem _buildBottomNavItem(IconData icon, String label, int index, bool isDark, int selectedIndex) {
-    final isSelected = _getBottomNavIndex(selectedIndex) == index;
-    return BottomNavigationBarItem(
-      icon: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? (isDark ? Colors.white.withOpacity(0.12) : AppColors.primary.withOpacity(0.1)) 
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+class _AnimatedMenuButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final Color color;
+
+  const _AnimatedMenuButton({required this.onPressed, required this.color});
+
+  @override
+  State<_AnimatedMenuButton> createState() => _AnimatedMenuButtonState();
+}
+
+class _AnimatedMenuButtonState extends State<_AnimatedMenuButton> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onPressed,
+        child: AnimatedScale(
+          scale: _isPressed ? 0.9 : (_isHovered ? 1.15 : 1.0),
+          duration: const Duration(milliseconds: 150),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _isHovered ? widget.color.withOpacity(0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isHovered ? widget.color.withOpacity(0.3) : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Icon(Icons.menu_rounded, color: widget.color, size: 24),
+            ),
+          ),
         ),
-        child: Icon(icon),
       ),
-      label: label,
     );
   }
 }

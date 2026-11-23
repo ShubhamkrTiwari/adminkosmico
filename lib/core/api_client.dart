@@ -59,9 +59,27 @@ class ApiClient {
     };
   }
 
+  Uri _parseUri(String endpoint) {
+    final cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+
+    if (cleanEndpoint.startsWith('/api/admin/') || cleanEndpoint.startsWith('/api/subscription')) {
+      return Uri.parse('https://api.kosmicowellness.com$cleanEndpoint');
+    }
+    if (cleanEndpoint.startsWith('/admin/') || cleanEndpoint.startsWith('/subscription')) {
+      return Uri.parse('https://api.kosmicowellness.com/api$cleanEndpoint');
+    }
+    if (cleanEndpoint.startsWith('/api/')) {
+      return Uri.parse('https://api.kosmicowellness.com$cleanEndpoint');
+    }
+    if (cleanEndpoint.startsWith('/whatsapp') || cleanEndpoint.startsWith('/notification')) {
+      return Uri.parse('https://api.kosmicowellness.com/api$cleanEndpoint');
+    }
+    return Uri.parse('${AppConstants.baseUrl}$cleanEndpoint');
+  }
+
   Future<http.Response> get(String endpoint) async {
     final response = await http.get(
-      Uri.parse('${AppConstants.baseUrl}$endpoint'),
+      _parseUri(endpoint),
       headers: await _getHeaders(),
     );
     _handleResponse(response, endpoint);
@@ -70,7 +88,7 @@ class ApiClient {
 
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse('${AppConstants.baseUrl}$endpoint'),
+      _parseUri(endpoint),
       headers: await _getHeaders(),
       body: jsonEncode(body),
     );
@@ -80,7 +98,7 @@ class ApiClient {
 
   Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
     final response = await http.put(
-      Uri.parse('${AppConstants.baseUrl}$endpoint'),
+      _parseUri(endpoint),
       headers: await _getHeaders(),
       body: jsonEncode(body),
     );
@@ -90,7 +108,7 @@ class ApiClient {
 
   Future<http.Response> delete(String endpoint) async {
     final response = await http.delete(
-      Uri.parse('${AppConstants.baseUrl}$endpoint'),
+      _parseUri(endpoint),
       headers: await _getHeaders(),
     );
     _handleResponse(response, endpoint);
@@ -99,7 +117,7 @@ class ApiClient {
 
   Future<http.Response> patch(String endpoint, Map<String, dynamic> body) async {
     final response = await http.patch(
-      Uri.parse('${AppConstants.baseUrl}$endpoint'),
+      _parseUri(endpoint),
       headers: await _getHeaders(),
       body: jsonEncode(body),
     );

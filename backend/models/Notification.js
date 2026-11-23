@@ -15,10 +15,25 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  icon: {
+    type: String,
+    default: '🔔'
+  },
+  type: {
+    type: String,
+    default: 'general'
+  },
+  category: {
+    type: String,
+    default: 'General'
+  },
   audience: {
     type: String,
-    enum: ['all', 'users', 'admins'],
     default: 'all'
+  },
+  user: {
+    type: String,
+    default: ''
   },
   scheduledAt: {
     type: Date,
@@ -26,11 +41,11 @@ const notificationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'scheduled', 'sent', 'failed'],
-    default: 'draft'
+    default: 'sent'
   },
   sentAt: {
-    type: Date
+    type: Date,
+    default: Date.now
   },
   deliveryStats: {
     total: { type: Number, default: 0 },

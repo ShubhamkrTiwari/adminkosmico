@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/api_client.dart';
+import '../config/api_config.dart';
 import 'user_provider.dart';
 import 'order_provider.dart';
 import 'notification_provider.dart';
@@ -23,7 +24,7 @@ class DashboardProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiClient.get('/dashboard');
+      final response = await _apiClient.get(ApiConfig.dashboard);
       debugPrint('Dashboard API Response: ${response.body}');
       
       if (response.statusCode == 200) {

@@ -9,18 +9,23 @@ class ApiConfig {
   static const int timeoutDuration = 30;
   
   // API Endpoints
-  static const String auth = '/api/admin';
-  static const String login = '$auth/login';
-  static const String signup = '$auth/signup';
-  static const String signupVerify = '$auth/signup-verify';
-  static const String me = '$auth/me';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String signupVerify = '/signup-verify';
+  static const String me = '/me';
   
-  static const String dashboard = '$auth/dashboard';
-  static const String products = '$auth/products';
-  static const String categories = '$auth/categories';
-  static const String orders = '$auth/orders';
-  static const String users = '$auth/users';
-  static const String notifications = '$auth/notifications';
-  static const String payments = '$auth/payments';
-  static const String updates = '$auth/updates';
+  static const String dashboard = '/dashboard';
+  static const String products = '/products';
+  static const String categories = '/categories';
+  static const String orders = '/orders';
+  static const String users = '/users';
+  static const String notifications = '/notifications';
+  static const String payments = '/payments';
+  static const String updates = '/updates';
+  static const String leads = '/admin/leads';
+  static const String subscriptions = '/subscriptions';
+  static const String subscriptionsAdmin = '/admin/subscriptions';
+  static const String whatsapp = '/admin/whatsapp';
+  static const String whatsappSend = '$whatsapp/send';
+  static const String whatsappTemplates = '$whatsapp/templates';
 }

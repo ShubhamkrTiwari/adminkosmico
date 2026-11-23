@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
+import '../config/api_config.dart';
 import '../models/user.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -145,7 +146,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiClient.post('/login', {
+      final response = await _apiClient.post(ApiConfig.login, {
         'email': email.trim(),
         'password': password.trim(),
       });

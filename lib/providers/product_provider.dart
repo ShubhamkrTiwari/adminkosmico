@@ -260,4 +260,14 @@ class ProductProvider extends ChangeNotifier {
     }
     return false;
   }
+
+  Future<bool> toggleNotification(String id, bool notify) async {
+    try {
+      // Use updateProduct endpoint since toggle endpoints don't exist
+      return await updateProduct(id, {'notify': notify});
+    } catch (e) {
+      debugPrint('Error toggling notification: $e');
+    }
+    return false;
+  }
 }

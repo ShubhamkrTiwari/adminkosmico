@@ -39,6 +39,13 @@ app.use('/api/categories', require('./routes/categoryRoutes')); // Added to supp
 app.use('/api/admin/orders', require('./routes/orderRoutes'));
 app.use('/api/admin/users', require('./routes/userRoutes'));
 app.use('/api/admin/notifications', require('./routes/notificationRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/notification-preferences', require('./routes/notificationRoutes'));
+app.use('/api/admin/notification-preferences', require('./routes/notificationRoutes'));
+app.use('/api/notification-analysis', require('./routes/notificationRoutes'));
+app.use('/api/admin/notification-analysis', require('./routes/notificationRoutes'));
+app.use('/api/notification-history', require('./routes/notificationRoutes'));
+app.use('/api/admin/notification-history', require('./routes/notificationRoutes'));
 app.use('/api/admin/payments', require('./routes/paymentRoutes'));
 app.use('/api/admin/updates', require('./routes/updateRoutes'));
 app.use('/api/updates', require('./routes/updateRoutes'));
@@ -49,9 +56,12 @@ app.use('/api/admin/coupons', require('./routes/couponRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes')); // Public access
 app.use('/api/admin/subscriptions', require('./routes/subscriptionRoutes'));
 app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
-app.use('/api/admin/settings', require('./routes/settingsRoutes'));
-app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/subscription', require('./routes/subscriptionRoutes')); // User subscription operations
+app.use('/api/admin/settings', require('./routes/subscriptionRoutes'));
+app.use('/api/settings', require('./routes/subscriptionRoutes'));
 app.use('/api/admin/upload', require('./routes/uploadRoutes')); // Add this line
+app.use('/api/admin/leads', require('./routes/leadRoutes'));
+app.use('/api/leads', require('./routes/leadRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {

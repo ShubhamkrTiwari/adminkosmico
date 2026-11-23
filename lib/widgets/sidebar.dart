@@ -88,6 +88,7 @@ class Sidebar extends StatelessWidget {
                   _buildNavItem(context, 3, Icons.confirmation_number_outlined, 'Coupons', isDark),
                   _buildNavItem(context, 4, Icons.shopping_bag_outlined, 'Orders', isDark),
                   _buildNavItem(context, 5, Icons.people_outline_rounded, 'Users', isDark),
+                  _buildNavItem(context, 6, Icons.person_add_alt_1_rounded, 'Leads', isDark),
                   
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -95,13 +96,14 @@ class Sidebar extends StatelessWidget {
                   ),
                   
                   _buildSectionTitle('COMMUNICATION', isDark),
-                  _buildNavItem(context, 6, Icons.notifications_none_rounded, 'Notifications', isDark),
+                  _buildNavItem(context, 7, Icons.notifications_none_rounded, 'Notifications', isDark),
+                  _buildNavItem(context, 8, Icons.chat_bubble_outline, 'WhatsApp', isDark),
                   
                   _buildSectionTitle('SYSTEM', isDark),
-                  _buildNavItem(context, 7, Icons.account_balance_wallet_outlined, 'Payments', isDark),
-                  _buildNavItem(context, 8, Icons.system_update_outlined, 'App Updates', isDark),
-                  _buildNavItem(context, 9, Icons.settings_outlined, 'Maintenance', isDark),
-                  _buildNavItem(context, 10, Icons.card_membership_rounded, 'Subscription', isDark),
+                  _buildNavItem(context, 9, Icons.account_balance_wallet_outlined, 'Payments', isDark),
+                  _buildNavItem(context, 10, Icons.system_update_outlined, 'App Updates', isDark),
+                  _buildNavItem(context, 11, Icons.settings_outlined, 'Maintenance', isDark),
+                  _buildNavItem(context, 12, Icons.card_membership_rounded, 'Subscription', isDark),
                 ],
               ),
             ),

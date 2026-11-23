@@ -57,7 +57,7 @@ class AppConstants {
   }
 
   static String get rootUrl {
-    return 'https://api.kosmicowellness.com';
+    return 'https://api.kosmicowellness.com/api';
   }
 
   static const double sidebarWidth = 260.0;
