@@ -116,10 +116,7 @@ class _DashboardMainState extends State<DashboardMain> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 22),
             onPressed: () {
-              context.read<DashboardProvider>().fetchDashboardData(context);
-              context.read<ProductProvider>().fetchProducts();
-              context.read<CategoryProvider>().fetchCategories();
-              context.read<MaintenanceProvider>().fetchMaintenanceStatus();
+              context.read<DashboardProvider>().fetchDashboardData(context, forceRefresh: true);
             },
           ),
           const SizedBox(width: 8),
@@ -155,24 +152,7 @@ class _DashboardMainState extends State<DashboardMain> {
             Expanded(
               child: Container(
                 color: Colors.transparent,
-                child: IndexedStack(
-                  index: selectedIndex,
-                  children: [
-                    const OverviewTab(),
-                    const ProductsTab(),
-                    const CategoriesTab(),
-                    const CouponsTab(),
-                    const OrdersTab(),
-                    const UsersTab(),
-                    const LeadsTab(),
-                    const NotificationsTab(),
-                    const WhatsAppTab(),
-                    const PaymentsTab(),
-                    const UpdatesTab(),
-                    const MaintenanceTab(),
-                    const SubscriptionsTab(),
-                  ],
-                ),
+                child: _buildTab(selectedIndex),
               ),
             ),
           ],
@@ -184,6 +164,25 @@ class _DashboardMainState extends State<DashboardMain> {
   void _showProductDialog(BuildContext context) {}
 
   void _showCategoryDialog(BuildContext context) {}
+
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0: return const OverviewTab();
+      case 1: return const ProductsTab();
+      case 2: return const CategoriesTab();
+      case 3: return const CouponsTab();
+      case 4: return const OrdersTab();
+      case 5: return const UsersTab();
+      case 6: return const LeadsTab();
+      case 7: return const NotificationsTab();
+      case 8: return const WhatsAppTab();
+      case 9: return const PaymentsTab();
+      case 10: return const UpdatesTab();
+      case 11: return const MaintenanceTab();
+      case 12: return const SubscriptionsTab();
+      default: return const OverviewTab();
+    }
+  }
 }
 
 class _AnimatedMenuButton extends StatefulWidget {

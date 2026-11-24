@@ -27,9 +27,11 @@ class _OverviewTabState extends State<OverviewTab> {
   }
 
   Future<void> _loadData() async {
-    await context.read<DashboardProvider>().fetchDashboardData(context);
-    await context.read<SubscriptionProvider>().fetchSubscriptions();
-    await context.read<SubscriptionProvider>().fetchSubscriptionAmount();
+    await Future.wait([
+      context.read<DashboardProvider>().fetchDashboardData(context),
+      context.read<SubscriptionProvider>().fetchSubscriptions(),
+      context.read<SubscriptionProvider>().fetchSubscriptionAmount(),
+    ]);
   }
 
   String _calculateTrend(num current, num previous) {
@@ -51,10 +53,6 @@ class _OverviewTabState extends State<OverviewTab> {
 
     return Consumer<DashboardProvider>(
       builder: (context, provider, _) {
-        if (provider.isLoading && provider.data == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         final stats = provider.data?['stats'];
         final recentOrders = provider.data?['orders'] as List? ?? [];
         final lowStock = provider.data?['lowStockProducts'] as List? ?? [];
@@ -71,82 +69,79 @@ class _OverviewTabState extends State<OverviewTab> {
               slivers: [
                 // Modern App Header
                 SliverToBoxAdapter(
-                  child: AnimatedEntrance(
-                    delay: Duration.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.green,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          const Text(
-                                            '⚡ LIVE ADMIN PORTAL',
-                                            style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Dashboard Overview',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w800,
-                                    color: Theme.of(context).textTheme.titleLarge?.color,
-                                    letterSpacing: -0.5,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Text(
+                                          '⚡ LIVE ADMIN PORTAL',
+                                          style: TextStyle(
+                                            color: AppColors.primary,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Dashboard Overview',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(context).textTheme.titleLarge?.color,
+                                  letterSpacing: -0.5,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: AppColors.getSecondaryTextColor(Theme.of(context).brightness == Brightness.dark),
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: AppColors.getSecondaryTextColor(Theme.of(context).brightness == Brightness.dark),
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          _buildHeaderAction(Icons.notifications_none_rounded, () {
-                            context.read<NavigationProvider>().setSelectedIndex(6);
-                          }),
-                          const SizedBox(width: 12),
-                          _buildHeaderAction(Icons.search_rounded, () {
-                            context.read<NavigationProvider>().setSelectedIndex(1);
-                          }),
-                        ],
-                      ),
+                        ),
+                        _buildHeaderAction(Icons.notifications_none_rounded, () {
+                          context.read<NavigationProvider>().setSelectedIndex(6);
+                        }),
+                        const SizedBox(width: 12),
+                        _buildHeaderAction(Icons.search_rounded, () {
+                          context.read<NavigationProvider>().setSelectedIndex(1);
+                        }),
+                      ],
                     ),
                   ),
                 ),
@@ -162,69 +157,54 @@ class _OverviewTabState extends State<OverviewTab> {
                       childAspectRatio: 1.15,
                     ),
                     delegate: SliverChildListDelegate([
-                      AnimatedEntrance(
-                        delay: const Duration(milliseconds: 50),
-                        child: StatCard(
-                          title: 'Total Revenue',
-                          value: currencyFormat.format(stats?['totalRevenue'] ?? 0),
-                          icon: Icons.account_balance_wallet_rounded,
-                          color: const Color(0xFF2E7D32),
-                          trend: _calculateTrend(stats?['revenueToday'] ?? 0, stats?['revenueYesterday'] ?? 0),
-                          isTrendPositive: _isTrendPositive(stats?['revenueToday'] ?? 0, stats?['revenueYesterday'] ?? 0),
-                          onTap: () => context.read<NavigationProvider>().setSelectedIndex(8),
-                        ),
+                      StatCard(
+                        title: 'Total Revenue',
+                        value: currencyFormat.format(stats?['totalRevenue'] ?? 0),
+                        icon: Icons.account_balance_wallet_rounded,
+                        color: const Color(0xFF2E7D32),
+                        trend: _calculateTrend(stats?['revenueToday'] ?? 0, stats?['revenueYesterday'] ?? 0),
+                        isTrendPositive: _isTrendPositive(stats?['revenueToday'] ?? 0, stats?['revenueYesterday'] ?? 0),
+                        onTap: () => context.read<NavigationProvider>().setSelectedIndex(8),
                       ),
-                      AnimatedEntrance(
-                        delay: const Duration(milliseconds: 100),
-                        child: StatCard(
-                          title: 'Total Orders',
-                          value: (stats?['totalOrders'] ?? 0).toString(),
-                          icon: Icons.local_mall_rounded,
-                          color: const Color(0xFF1565C0),
-                          trend: _calculateTrend(stats?['ordersToday'] ?? 0, stats?['ordersYesterday'] ?? 0),
-                          isTrendPositive: _isTrendPositive(stats?['ordersToday'] ?? 0, stats?['ordersYesterday'] ?? 0),
-                          onTap: () => context.read<NavigationProvider>().setSelectedIndex(4),
-                        ),
+                      StatCard(
+                        title: 'Total Orders',
+                        value: (stats?['totalOrders'] ?? 0).toString(),
+                        icon: Icons.local_mall_rounded,
+                        color: const Color(0xFF1565C0),
+                        trend: _calculateTrend(stats?['ordersToday'] ?? 0, stats?['ordersYesterday'] ?? 0),
+                        isTrendPositive: _isTrendPositive(stats?['ordersToday'] ?? 0, stats?['ordersYesterday'] ?? 0),
+                        onTap: () => context.read<NavigationProvider>().setSelectedIndex(4),
                       ),
-                      AnimatedEntrance(
-                        delay: const Duration(milliseconds: 150),
-                        child: StatCard(
-                          title: 'Customers',
-                          value: (stats?['totalUsers'] ?? 0).toString(),
-                          icon: Icons.group_rounded,
-                          color: const Color(0xFFE65100),
-                          onTap: () => context.read<NavigationProvider>().setSelectedIndex(5),
-                        ),
+                      StatCard(
+                        title: 'Customers',
+                        value: (stats?['totalUsers'] ?? 0).toString(),
+                        icon: Icons.group_rounded,
+                        color: const Color(0xFFE65100),
+                        onTap: () => context.read<NavigationProvider>().setSelectedIndex(5),
                       ),
-                      AnimatedEntrance(
-                        delay: const Duration(milliseconds: 200),
-                        child: StatCard(
-                          title: 'Notifications',
-                          value: (stats?['totalNotifications'] ?? 0).toString(),
-                          icon: Icons.campaign_rounded,
-                          color: const Color(0xFF6A1B9A),
-                          onTap: () => context.read<NavigationProvider>().setSelectedIndex(6),
-                        ),
+                      StatCard(
+                        title: 'Notifications',
+                        value: (stats?['totalNotifications'] ?? 0).toString(),
+                        icon: Icons.campaign_rounded,
+                        color: const Color(0xFF6A1B9A),
+                        onTap: () => context.read<NavigationProvider>().setSelectedIndex(6),
                       ),
-                      AnimatedEntrance(
-                        delay: const Duration(milliseconds: 250),
-                        child: Consumer<SubscriptionProvider>(
-                          builder: (context, subProvider, _) {
-                            final subscriptions = subProvider.subscriptions;
-                            String displayValue = '₹${subProvider.subscriptionAmount.toStringAsFixed(0)}';
-                            if (subscriptions.isNotEmpty) {
-                              final firstPlan = subscriptions.first;
-                              displayValue = '₹${firstPlan.price.toStringAsFixed(0)} / ${firstPlan.durationText}';
-                            }
-                            return StatCard(
-                              title: 'Subscription Plan',
-                              value: displayValue,
-                              icon: Icons.card_membership_rounded,
-                              color: const Color(0xFFC2185B),
-                              onTap: () => context.read<NavigationProvider>().setSelectedIndex(11),
-                            );
-                          },
-                        ),
+                      Consumer<SubscriptionProvider>(
+                        builder: (context, subProvider, _) {
+                          final subscriptions = subProvider.subscriptions;
+                          String displayValue = '₹${subProvider.subscriptionAmount.toStringAsFixed(0)}';
+                          if (subscriptions.isNotEmpty) {
+                            final firstPlan = subscriptions.first;
+                            displayValue = '₹${firstPlan.price.toStringAsFixed(0)} / ${firstPlan.durationText}';
+                          }
+                          return StatCard(
+                            title: 'Subscription Plan',
+                            value: displayValue,
+                            icon: Icons.card_membership_rounded,
+                            color: const Color(0xFFC2185B),
+                            onTap: () => context.read<NavigationProvider>().setSelectedIndex(11),
+                          );
+                        },
                       ),
                     ]),
                   ),
@@ -289,43 +269,37 @@ class _OverviewTabState extends State<OverviewTab> {
 
                 // Sales Chart
                 SliverToBoxAdapter(
-                  child: AnimatedEntrance(
-                    delay: const Duration(milliseconds: 300),
-                    child: _buildSectionWrapper(
-                      title: 'Revenue Analytics',
-                      child: _buildSalesChart(context, salesData),
-                    ),
+                  child: _buildSectionWrapper(
+                    title: 'Revenue Analytics',
+                    child: _buildSalesChart(context, salesData),
                   ),
                 ),
 
                 // Inventory & Recent Activity
                 SliverToBoxAdapter(
-                  child: AnimatedEntrance(
-                    delay: const Duration(milliseconds: 350),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (constraints.maxWidth > 800) {
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(flex: 2, child: _buildActivityList(recentOrders)),
-                                const SizedBox(width: 24),
-                                Expanded(child: _buildStockAlerts(lowStock)),
-                              ],
-                            );
-                          } else {
-                            return Column(
-                              children: [
-                                _buildStockAlerts(lowStock),
-                                const SizedBox(height: 24),
-                                _buildActivityList(recentOrders),
-                              ],
-                            );
-                          }
-                        },
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth > 800) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 2, child: _buildActivityList(recentOrders)),
+                              const SizedBox(width: 24),
+                              Expanded(child: _buildStockAlerts(lowStock)),
+                            ],
+                          );
+                        } else {
+                          return Column(
+                            children: [
+                              _buildStockAlerts(lowStock),
+                              const SizedBox(height: 24),
+                              _buildActivityList(recentOrders),
+                            ],
+                          );
+                        }
+                      },
                     ),
                   ),
                 ),

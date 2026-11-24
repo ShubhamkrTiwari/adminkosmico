@@ -91,4 +91,10 @@ orderSchema.pre('save', function(next) {
   next();
 });
 
+// Indexes for dashboard performance optimization
+orderSchema.index({ status: 1, paymentStatus: 1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ createdAt: -1, status: 1 });
+orderSchema.index({ user: 1 });
+
 module.exports = mongoose.model('Order', orderSchema);

@@ -88,4 +88,7 @@ productSchema.pre('save', function(next) {
   next();
 });
 
+// Indexes for dashboard performance optimization
+productSchema.index({ stock: 1 });
+
 module.exports = mongoose.model('Product', productSchema);

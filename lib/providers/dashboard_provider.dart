@@ -13,12 +13,25 @@ class DashboardProvider extends ChangeNotifier {
   bool _isLoading = false;
   Map<String, dynamic>? _data;
   String? _error;
+  DateTime? _lastFetchTime;
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
   bool get isLoading => _isLoading;
   Map<String, dynamic>? get data => _data;
   String? get error => _error;
 
-  Future<void> fetchDashboardData(BuildContext context) async {
+  bool _isCacheValid() {
+    if (_lastFetchTime == null || _data == null) return false;
+    return DateTime.now().difference(_lastFetchTime!) < _cacheDuration;
+  }
+
+  Future<void> fetchDashboardData(BuildContext context, {bool forceRefresh = false}) async {
+    // Return cached data if valid and not forcing refresh
+    if (!forceRefresh && _isCacheValid()) {
+      debugPrint('Using cached dashboard data');
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -26,11 +39,12 @@ class DashboardProvider extends ChangeNotifier {
     try {
       final response = await _apiClient.get(ApiConfig.dashboard);
       debugPrint('Dashboard API Response: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         _data = result['data'] ?? result;
-        
+        _lastFetchTime = DateTime.now();
+
         // Sync other providers immediately
         if (_data != null) {
           if (_data!['users'] != null) {

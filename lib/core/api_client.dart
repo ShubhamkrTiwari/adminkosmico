@@ -81,6 +81,9 @@ class ApiClient {
     final response = await http.get(
       _parseUri(endpoint),
       headers: await _getHeaders(),
+    ).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('Request timeout after 15 seconds'),
     );
     _handleResponse(response, endpoint);
     return response;
@@ -91,6 +94,9 @@ class ApiClient {
       _parseUri(endpoint),
       headers: await _getHeaders(),
       body: jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('Request timeout after 15 seconds'),
     );
     _handleResponse(response, endpoint);
     return response;
@@ -101,6 +107,9 @@ class ApiClient {
       _parseUri(endpoint),
       headers: await _getHeaders(),
       body: jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('Request timeout after 15 seconds'),
     );
     _handleResponse(response, endpoint);
     return response;
@@ -110,6 +119,9 @@ class ApiClient {
     final response = await http.delete(
       _parseUri(endpoint),
       headers: await _getHeaders(),
+    ).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('Request timeout after 15 seconds'),
     );
     _handleResponse(response, endpoint);
     return response;
@@ -120,6 +132,9 @@ class ApiClient {
       _parseUri(endpoint),
       headers: await _getHeaders(),
       body: jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('Request timeout after 15 seconds'),
     );
     _handleResponse(response, endpoint);
     return response;
