@@ -1,24 +1,28 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/constants.dart';
-import '../../providers/theme_provider.dart';
-import '../../providers/dashboard_provider.dart';
-import '../../providers/product_provider.dart';
-import '../../providers/category_provider.dart';
-import '../../providers/maintenance_provider.dart';
-import '../../widgets/sidebar.dart';
-import 'overview_tab.dart';
-import 'products_tab.dart';
-import 'categories_tab.dart';
-import 'orders_tab.dart';
-import 'users_tab.dart';
-import 'notifications_tab.dart';
-import 'payments_tab.dart';
-import 'updates_tab.dart';
-import 'maintenance_tab.dart';
-import 'coupons_tab.dart';
+import 'package:adminkosmico/core/constants.dart';
+import 'package:adminkosmico/providers/theme_provider.dart';
+import 'package:adminkosmico/providers/dashboard_provider.dart';
+import 'package:adminkosmico/providers/product_provider.dart';
+import 'package:adminkosmico/providers/category_provider.dart';
+import 'package:adminkosmico/providers/maintenance_provider.dart';
+import 'package:adminkosmico/providers/navigation_provider.dart';
+import 'package:adminkosmico/widgets/sidebar.dart';
+import 'package:adminkosmico/widgets/liquid_floating_bar.dart';
+import 'package:adminkosmico/views/dashboard/overview_tab.dart';
+import 'package:adminkosmico/views/dashboard/products_tab.dart';
+import 'package:adminkosmico/views/dashboard/categories_tab.dart';
+import 'package:adminkosmico/views/dashboard/orders_tab.dart';
+import 'package:adminkosmico/views/dashboard/users_tab.dart';
+import 'package:adminkosmico/views/dashboard/notifications_tab.dart';
+import 'package:adminkosmico/views/dashboard/payments_tab.dart';
+import 'package:adminkosmico/views/dashboard/updates_tab.dart';
+import 'package:adminkosmico/views/dashboard/maintenance_tab.dart';
+import 'package:adminkosmico/views/dashboard/coupons_tab.dart';
+import 'package:adminkosmico/views/dashboard/subscriptions_tab.dart';
+import 'package:adminkosmico/views/dashboard/whatsapp_tab.dart';
+import 'package:adminkosmico/views/dashboard/leads_tab.dart';
 
 class DashboardMain extends StatefulWidget {
   const DashboardMain({super.key});
@@ -27,25 +31,8 @@ class DashboardMain extends StatefulWidget {
   State<DashboardMain> createState() => _DashboardMainState();
 }
 
-class _DashboardMainState extends State<DashboardMain> with SingleTickerProviderStateMixin {
-  int _selectedIndex = 0;
+class _DashboardMainState extends State<DashboardMain> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late AnimationController _menuController;
-
-  @override
-  void initState() {
-    super.initState();
-    _menuController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 450),
-    );
-  }
-
-  @override
-  void dispose() {
-    _menuController.dispose();
-    super.dispose();
-  }
 
   final List<String> _titles = [
     'Dashboard Overview',
@@ -54,18 +41,21 @@ class _DashboardMainState extends State<DashboardMain> with SingleTickerProvider
     'Coupon Management',
     'Order Management',
     'User Management',
+    'Leads Management',
     'Notifications',
+    'WhatsApp Messaging',
     'Payments & Transactions',
     'App Updates',
-    'Maintenance'
+    'Maintenance',
+    'Subscription Management'
   ];
 
-  int? _getBottomNavIndex(int tabIndex) {
+  int _getBottomNavIndex(int tabIndex) {
     if (tabIndex == 0) return 0; // Overview
     if (tabIndex == 1) return 1; // Products
     if (tabIndex == 4) return 2; // Orders
     if (tabIndex == 5) return 3; // Users
-    return null;
+    return 0; // Default to first if not in bottom nav
   }
 
   int _getTabIndexFromBottomNav(int navIndex) {
@@ -79,58 +69,35 @@ class _DashboardMainState extends State<DashboardMain> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final navProvider = Provider.of<NavigationProvider>(context);
+    final selectedIndex = navProvider.selectedIndex;
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       key: _scaffoldKey,
-      onDrawerChanged: (isOpen) {
-        if (isOpen) {
-          _menuController.forward();
-        } else {
-          _menuController.reverse();
-        }
-      },
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: themeProvider.themeMode == ThemeMode.dark 
-                ? [
-                    AppColors.primaryLight.withValues(alpha: 0.1),
-                    AppColors.darkBg.withValues(alpha: 0.1),
-                  ]
-                : [
-                    AppColors.primary.withValues(alpha: 0.05),
-                    AppColors.primary.withValues(alpha: 0.1),
-                  ],
+              colors: [
+                AppColors.primary.withOpacity(0.05),
+                AppColors.primary.withOpacity(0.1),
+              ],
             ),
           ),
         ),
-        leading: !isDesktop ? Center(
-          child: Container(
-            decoration: BoxDecoration(
-              color: (themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary).withValues(alpha: 0.05),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: AnimatedIcon(
-                icon: AnimatedIcons.menu_close,
-                progress: _menuController,
-                color: themeProvider.themeMode == ThemeMode.dark ? AppColors.primaryLight : AppColors.primary,
-                size: 20,
-              ),
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-          ),
+        leading: !isDesktop ? _AnimatedMenuButton(
+          color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.primary,
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ) : null,
         title: Text(
-          _titles[_selectedIndex],
+          _titles[selectedIndex],
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700, 
             fontSize: 18,
-            color: themeProvider.themeMode == ThemeMode.dark ? AppColors.darkTextPrimary : AppColors.textDark,
+            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : AppColors.textDark,
           ),
         ),
         centerTitle: true,
@@ -149,95 +116,43 @@ class _DashboardMainState extends State<DashboardMain> with SingleTickerProvider
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 22),
             onPressed: () {
-              context.read<DashboardProvider>().fetchDashboardData(context);
-              context.read<ProductProvider>().fetchProducts();
-              context.read<CategoryProvider>().fetchCategories();
-              context.read<MaintenanceProvider>().fetchMaintenanceStatus();
+              context.read<DashboardProvider>().fetchDashboardData(context, forceRefresh: true);
             },
           ),
           const SizedBox(width: 8),
         ],
       ),
       drawer: Sidebar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: selectedIndex,
         onItemSelected: (index) {
-          setState(() => _selectedIndex = index);
+          navProvider.setSelectedIndex(index);
           if (!isDesktop) Navigator.pop(context);
         },
       ),
       bottomNavigationBar: !isDesktop
-          ? SafeArea(
-              child: Container(
-                height: 75,
-                margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (themeProvider.themeMode == ThemeMode.dark ? Colors.black : AppColors.primary).withValues(alpha: 0.15),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: themeProvider.themeMode == ThemeMode.dark 
-                            ? AppColors.darkSurface.withValues(alpha: 0.8)
-                            : Colors.white.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.black.withValues(alpha: 0.1), 
-                          width: 1.5
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildNavButton(Icons.grid_view_rounded, 'Overview', 0, themeProvider.themeMode == ThemeMode.dark),
-                          _buildNavButton(Icons.inventory_2_outlined, 'Products', 1, themeProvider.themeMode == ThemeMode.dark),
-                          _buildNavButton(Icons.shopping_bag_outlined, 'Orders', 2, themeProvider.themeMode == ThemeMode.dark),
-                          _buildNavButton(Icons.people_outline_rounded, 'Users', 3, themeProvider.themeMode == ThemeMode.dark),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+          ? LiquidFloatingBar(
+              currentIndex: _getBottomNavIndex(selectedIndex),
+              onTap: (index) {
+                navProvider.setSelectedIndex(_getTabIndexFromBottomNav(index));
+              },
+              isDark: themeProvider.themeMode == ThemeMode.dark,
             )
           : null,
       body: Container(
-        decoration: BoxDecoration(gradient: AppColors.getSubtleGradient(themeProvider.themeMode == ThemeMode.dark)),
+        decoration: BoxDecoration(
+          gradient: AppColors.getSubtleGradient(themeProvider.themeMode == ThemeMode.dark),
+        ),
         child: Row(
           children: [
             if (isDesktop)
               Sidebar(
-                selectedIndex: _selectedIndex,
-                onItemSelected: (index) => setState(() => _selectedIndex = index),
+                selectedIndex: selectedIndex,
+                onItemSelected: (index) => navProvider.setSelectedIndex(index),
               ),
             Expanded(
               child: Container(
                 color: Colors.transparent,
-                child: IndexedStack(
-                  index: _selectedIndex,
-                  children: const [
-                    OverviewTab(key: ValueKey('overview')),
-                    ProductsTab(key: ValueKey('products')),
-                    CategoriesTab(key: ValueKey('categories')),
-                    CouponsTab(key: ValueKey('coupons')),
-                    OrdersTab(key: ValueKey('orders')),
-                    UsersTab(key: ValueKey('users')),
-                    NotificationsTab(key: ValueKey('notifications')),
-                    PaymentsTab(key: ValueKey('payments')),
-                    UpdatesTab(key: ValueKey('updates')),
-                    MaintenanceTab(key: ValueKey('maintenance')),
-                  ],
-                ),
+                child: _buildTab(selectedIndex),
               ),
             ),
           ],
@@ -250,77 +165,68 @@ class _DashboardMainState extends State<DashboardMain> with SingleTickerProvider
 
   void _showCategoryDialog(BuildContext context) {}
 
-  Widget _buildNavButton(IconData icon, String label, int index, bool isDark) {
-    final navIndex = _getBottomNavIndex(_selectedIndex);
-    final isSelected = navIndex == index;
-    final primaryColor = isDark ? AppColors.primaryLight : AppColors.primary;
-    
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          setState(() => _selectedIndex = _getTabIndexFromBottomNav(index));
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutQuint,
-        padding: EdgeInsets.symmetric(horizontal: isSelected ? 20 : 12, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: isSelected 
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  primaryColor.withValues(alpha: 0.15),
-                  primaryColor.withValues(alpha: 0.05),
-                ],
-              ) 
-            : null,
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected 
-            ? Border.all(color: primaryColor.withValues(alpha: 0.1), width: 1)
-            : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedRotation(
-              turns: isSelected ? 1.0 : 0,
-              duration: const Duration(milliseconds: 1000),
-              curve: Curves.elasticOut,
-              child: AnimatedScale(
-                scale: isSelected ? 1.15 : 1.0,
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.elasticOut,
-                child: Icon(
-                  icon,
-                  color: isSelected ? primaryColor : (isDark ? Colors.white54 : Colors.grey.shade400),
-                  size: 22,
-                ),
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0: return const OverviewTab();
+      case 1: return const ProductsTab();
+      case 2: return const CategoriesTab();
+      case 3: return const CouponsTab();
+      case 4: return const OrdersTab();
+      case 5: return const UsersTab();
+      case 6: return const LeadsTab();
+      case 7: return const NotificationsTab();
+      case 8: return const WhatsAppTab();
+      case 9: return const PaymentsTab();
+      case 10: return const UpdatesTab();
+      case 11: return const MaintenanceTab();
+      case 12: return const SubscriptionsTab();
+      default: return const OverviewTab();
+    }
+  }
+}
+
+class _AnimatedMenuButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final Color color;
+
+  const _AnimatedMenuButton({required this.onPressed, required this.color});
+
+  @override
+  State<_AnimatedMenuButton> createState() => _AnimatedMenuButtonState();
+}
+
+class _AnimatedMenuButtonState extends State<_AnimatedMenuButton> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onPressed,
+        child: AnimatedScale(
+          scale: _isPressed ? 0.9 : (_isHovered ? 1.15 : 1.0),
+          duration: const Duration(milliseconds: 150),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _isHovered ? widget.color.withOpacity(0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isHovered ? widget.color.withOpacity(0.3) : Colors.transparent,
+                width: 1,
               ),
             ),
-            ClipRect(
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeOutQuint,
-                alignment: Alignment.centerLeft,
-                widthFactor: isSelected ? 1.0 : 0.0,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10.0),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: GoogleFonts.poppins(
-                      color: primaryColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
+            child: Center(
+              child: Icon(Icons.menu_rounded, color: widget.color, size: 24),
             ),
-          ],
+          ),
         ),
       ),
     );

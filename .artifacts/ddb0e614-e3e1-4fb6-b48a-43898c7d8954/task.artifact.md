@@ -1,0 +1,6 @@
+- [ ] Update `darkTheme` in `main.dart` for lighter background and surfaces
+- [ ] Adjust `getSubtleGradient` and text colors in `constants.dart`
+- [ ] Fix "Create Account" and link visibility in `login_screen.dart`
+- [ ] Force white headers and adjust action buttons in `overview_tab.dart`
+- [ ] Improve card contrast in `stat_card.dart`
+- [ ] Verify visibility across all screens in dark mode

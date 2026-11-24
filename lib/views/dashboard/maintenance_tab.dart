@@ -42,20 +42,12 @@ class _MaintenanceTabState extends State<MaintenanceTab> {
   Widget build(BuildContext context) {
     final isLoading = context.watch<MaintenanceProvider>().isLoading;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.15),
-              const Color(0xFFF4F7F4),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
+          gradient: AppColors.getSubtleGradient(isDark),
         ),
         child: Stack(
           children: [
@@ -64,8 +56,8 @@ class _MaintenanceTabState extends State<MaintenanceTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('System Maintenance', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text('Control app accessibility and maintenance state', style: TextStyle(color: AppColors.textLight)),
+                  Text('System Maintenance', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleLarge?.color)),
+                  Text('Control app accessibility and maintenance state', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
                   const SizedBox(height: 32),
                   _buildMaintenanceCard(),
                 ],
@@ -80,13 +72,14 @@ class _MaintenanceTabState extends State<MaintenanceTab> {
   }
 
   Widget _buildMaintenanceCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<MaintenanceProvider>(
       builder: (context, provider, _) {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[900] : Colors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(

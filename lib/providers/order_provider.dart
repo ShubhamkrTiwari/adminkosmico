@@ -51,4 +51,60 @@ class OrderProvider extends ChangeNotifier {
     }
     return false;
   }
+
+  // Shiprocket Actions
+  Future<Map<String, dynamic>> createShiprocketOrder(String id) async {
+    try {
+      final response = await _apiClient.post('/orders/$id/shiprocket/create', {});
+      if (response.statusCode == 200) {
+        fetchOrders();
+        return {'success': true, 'message': 'Shiprocket order created successfully'};
+      }
+      final error = jsonDecode(response.body);
+      return {'success': false, 'message': error['message'] ?? 'Failed to create Shiprocket order'};
+    } catch (e) {
+      return {'success': false, 'message': 'Connection error: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> cancelShiprocketOrder(String id) async {
+    try {
+      final response = await _apiClient.post('/orders/$id/shiprocket/cancel', {});
+      if (response.statusCode == 200) {
+        fetchOrders();
+        return {'success': true, 'message': 'Shiprocket order cancelled'};
+      }
+      final error = jsonDecode(response.body);
+      return {'success': false, 'message': error['message'] ?? 'Failed to cancel Shiprocket order'};
+    } catch (e) {
+      return {'success': false, 'message': 'Connection error: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> trackShiprocketOrder(String id) async {
+    try {
+      final response = await _apiClient.get('/orders/$id/shiprocket/track');
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': jsonDecode(response.body)};
+      }
+      final error = jsonDecode(response.body);
+      return {'success': false, 'message': error['message'] ?? 'Failed to track order'};
+    } catch (e) {
+      return {'success': false, 'message': 'Connection error: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> returnShiprocketOrder(String id) async {
+    try {
+      final response = await _apiClient.post('/orders/$id/shiprocket/return', {});
+      if (response.statusCode == 200) {
+        fetchOrders();
+        return {'success': true, 'message': 'Return pickup initiated'};
+      }
+      final error = jsonDecode(response.body);
+      return {'success': false, 'message': error['message'] ?? 'Failed to initiate return'};
+    } catch (e) {
+      return {'success': false, 'message': 'Connection error: $e'};
+    }
+  }
 }

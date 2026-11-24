@@ -5,14 +5,22 @@ const path = require('path');
 const fs = require('fs');
 const { protect, adminOnly } = require('../middleware/auth');
 
+const os = require('os');
+
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/products';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    try {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'products');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    } catch (dirErr) {
+      console.error('Directory creation fallback error:', dirErr);
+      const tempDir = os.tmpdir();
+      cb(null, tempDir);
     }
-    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -34,26 +42,38 @@ const upload = multer({
   }
 });
 
-// POST /api/admin/upload/product-image
-router.post('/product-image', protect, adminOnly, (req, res) => {
-  upload.single('image')(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      return res.status(400).json({ success: false, message: `Multer Error: ${err.message}` });
-    } else if (err) {
-      return res.status(400).json({ success: false, message: err.message });
+const handleUpload = (req, res) => {
+  const uploadMiddleware = upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'imageFile', maxCount: 1 },
+    { name: 'file', maxCount: 1 },
+    { name: 'productImage', maxCount: 1 }
+  ]);
+
+  uploadMiddleware(req, res, (err) => {
+    if (err) {
+      console.error('Multer / Upload error:', err);
+      return res.status(400).json({ success: false, message: err.message || 'Upload error' });
     }
 
-    if (!req.file) {
+    const file = req.files?.image?.[0] || req.files?.imageFile?.[0] || req.files?.file?.[0] || req.files?.productImage?.[0] || req.file;
+
+    if (!file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    const imageUrl = `/uploads/products/${req.file.filename}`;
+    const imageUrl = `/uploads/products/${file.filename}`;
     res.status(200).json({
       success: true,
       message: 'Image uploaded successfully',
-      url: imageUrl
+      url: imageUrl,
+      imageUrl: imageUrl
     });
   });
-});
+};
+
+router.post('/product-image', protect, adminOnly, handleUpload);
+router.post('/admin/product-image', protect, adminOnly, handleUpload);
+router.post('/', protect, adminOnly, handleUpload);
 
 module.exports = router;

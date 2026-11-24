@@ -23,26 +23,18 @@ class _PaymentsTabState extends State<PaymentsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary.withOpacity(0.15),
-            const Color(0xFFF4F7F4),
-            Colors.white,
-          ],
-          stops: const [0.0, 0.4, 1.0],
-        ),
+        gradient: AppColors.getSubtleGradient(isDark),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Transactions', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('Monitor all payments and revenue flow', style: TextStyle(color: AppColors.textLight)),
+            Text('Transactions', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleLarge?.color)),
+            Text('Monitor all payments and revenue flow', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
             const SizedBox(height: 32),
             Expanded(child: _buildPaymentList()),
           ],
@@ -57,9 +49,10 @@ class _PaymentsTabState extends State<PaymentsTab> {
         if (provider.isLoading) return const Center(child: CircularProgressIndicator());
         if (provider.payments.isEmpty) return const Center(child: Text('No transactions found'));
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[900] : Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
           ),

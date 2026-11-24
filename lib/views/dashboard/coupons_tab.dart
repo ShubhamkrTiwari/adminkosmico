@@ -37,16 +37,7 @@ class _CouponsTabState extends State<CouponsTab> {
           : null,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.15),
-              const Color(0xFFF4F7F4),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
+          gradient: AppColors.getSubtleGradient(Theme.of(context).brightness == Brightness.dark),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -64,14 +55,16 @@ class _CouponsTabState extends State<CouponsTab> {
   }
 
   Widget _buildHeader(bool isDesktop) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Coupons', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('Manage discount codes and promotions', style: TextStyle(color: AppColors.textLight)),
+            Text('Coupons', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+            Text('Manage discount codes and promotions', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
           ],
         ),
         if (isDesktop)
@@ -90,6 +83,24 @@ class _CouponsTabState extends State<CouponsTab> {
       builder: (context, provider, _) {
         if (provider.isLoading && provider.coupons.isEmpty) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.error != null && provider.coupons.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline_rounded, size: 64, color: Colors.redAccent),
+                const SizedBox(height: 16),
+                Text(provider.error!, style: const TextStyle(color: Colors.redAccent)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => provider.fetchCoupons(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
         }
 
         if (provider.coupons.isEmpty) {
@@ -115,12 +126,12 @@ class _CouponsTabState extends State<CouponsTab> {
 
   Widget _buildCouponCard(Coupon coupon) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isExpired = coupon.expiryDate.isBefore(DateTime.now());
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
       ),
@@ -359,10 +370,10 @@ class _CouponDialogState extends State<CouponDialog> {
               final data = {
                 'code': _codeController.text,
                 'discountType': _discountType,
-                'discountAmount': double.parse(_amountController.text),
+                'discountValue': double.parse(_amountController.text),
                 'minOrderAmount': double.tryParse(_minAmountController.text) ?? 0,
-                'expiryDate': _expiryDate.toIso8601String(),
-                'description': _descController.text,
+                'validUntil': _expiryDate.toIso8601String(),
+                'title': _descController.text,
               };
 
               bool success;

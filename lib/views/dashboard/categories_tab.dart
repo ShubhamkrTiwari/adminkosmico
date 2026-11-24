@@ -26,11 +26,9 @@ class _CategoriesTabState extends State<CategoriesTab> {
     final catProvider = context.read<CategoryProvider>();
     final dashProvider = context.read<DashboardProvider>();
     
-    // Refresh both to be safe
     await catProvider.fetchCategories();
     await dashProvider.fetchDashboardData(context);
     
-    // If list is still empty, manually check dashboard data
     if (mounted && catProvider.categories.isEmpty) {
       if (dashProvider.data != null && dashProvider.data!['categories'] != null) {
         catProvider.setCategoriesFromDashboard(dashProvider.data!['categories']);
@@ -41,6 +39,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -53,16 +52,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
           : null,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.15),
-              const Color(0xFFF4F7F4),
-              Colors.white,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
+          gradient: AppColors.getSubtleGradient(isDark),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -120,11 +110,13 @@ class _CategoriesTabState extends State<CategoriesTab> {
   }
 
   Widget _buildHeaderText() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Categories', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text('Manage product groupings and navigation', style: TextStyle(color: AppColors.textLight)),
+        Text('Categories', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+        Text('Manage product groupings and navigation', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
       ],
     );
   }
@@ -132,7 +124,6 @@ class _CategoriesTabState extends State<CategoriesTab> {
   Widget _buildCategoryGrid() {
     return Consumer<CategoryProvider>(
       builder: (context, provider, _) {
-        // Force refresh if the provider list is empty but we haven't loaded yet
         if (provider.isLoading && provider.categories.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -161,7 +152,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
         return LayoutBuilder(
           builder: (context, constraints) {
             return GridView.builder(
-              padding: const EdgeInsets.only(bottom: 100), // Extra space for FAB
+              padding: const EdgeInsets.only(bottom: 100),
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 200,
                 crossAxisSpacing: 16,
@@ -180,9 +171,10 @@ class _CategoriesTabState extends State<CategoriesTab> {
   }
 
   Widget _buildCategoryCard(Category category) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -211,25 +203,6 @@ class _CategoriesTabState extends State<CategoriesTab> {
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: category.isVisible ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      category.isVisible ? 'Visible' : 'Hidden',
-                      style: TextStyle(
-                        color: category.isVisible ? Colors.green : Colors.grey,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -247,7 +220,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
                 const SizedBox(height: 4),
                 Text(
                   '/${category.slug}',
-                  style: TextStyle(color: AppColors.textLight, fontSize: 12, fontStyle: FontStyle.italic),
+                  style: TextStyle(color: AppColors.getSecondaryTextColor(isDark), fontSize: 12, fontStyle: FontStyle.italic),
                 ),
                 const SizedBox(height: 12),
                 Row(

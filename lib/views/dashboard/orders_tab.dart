@@ -16,6 +16,7 @@ class OrdersTab extends StatefulWidget {
 
 class _OrdersTabState extends State<OrdersTab> {
   String _searchQuery = '';
+  String? _selectedStatus;
 
   @override
   void initState() {
@@ -30,7 +31,7 @@ class _OrdersTabState extends State<OrdersTab> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(gradient: AppColors.subtleGradient),
+      decoration: BoxDecoration(gradient: AppColors.getSubtleGradient(Theme.of(context).brightness == Brightness.dark)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Material(
@@ -51,20 +52,23 @@ class _OrdersTabState extends State<OrdersTab> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Order Management', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text('Track and process customer orders', style: TextStyle(color: AppColors.textLight)),
+        Text('Order Management', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+        Text('Track and process customer orders', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
       ],
     );
   }
 
   Widget _buildFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
       ),
@@ -106,13 +110,22 @@ class _OrdersTabState extends State<OrdersTab> {
   }
 
   Widget _buildStatusDropdown() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DropdownButton<String>(
-      hint: const Text('All Status'),
+      hint: Text('All Status', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
+      value: _selectedStatus,
       underline: const SizedBox(),
-      items: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
-          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+      dropdownColor: isDark ? Colors.grey[900] : Colors.white,
+      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      items: [null, 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
+          .map((s) => DropdownMenuItem<String>(
+                value: s,
+                child: Text(s ?? 'All Status'),
+              ))
           .toList(),
-      onChanged: (v) {},
+      onChanged: (v) {
+        setState(() => _selectedStatus = v);
+      },
     );
   }
 
@@ -121,8 +134,13 @@ class _OrdersTabState extends State<OrdersTab> {
       builder: (context, provider, _) {
         if (provider.isLoading) return const Center(child: CircularProgressIndicator());
         
-        final filteredOrders = provider.orders.where((o) => 
-          o.id.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+        final filteredOrders = provider.orders.where((o) {
+          final matchesSearch = o.id.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                               o.userName.toLowerCase().contains(_searchQuery.toLowerCase());
+          final matchesStatus = _selectedStatus == null || 
+                               o.status.toLowerCase() == _selectedStatus!.toLowerCase();
+          return matchesSearch && matchesStatus;
+        }).toList();
 
         if (filteredOrders.isEmpty) {
           return Center(
@@ -142,7 +160,7 @@ class _OrdersTabState extends State<OrdersTab> {
             if (constraints.maxWidth > 900) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
                 ),
@@ -180,10 +198,11 @@ class _OrdersTabState extends State<OrdersTab> {
   }
 
   Widget _buildOrderMobileCard(Order o) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
@@ -212,7 +231,14 @@ class _OrdersTabState extends State<OrdersTab> {
                   children: [
                     const Icon(Icons.person_outline_rounded, size: 16, color: Colors.grey),
                     const SizedBox(width: 8),
-                    Text(o.userName, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Expanded(
+                      child: Text(
+                        o.userName, 
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -222,7 +248,7 @@ class _OrdersTabState extends State<OrdersTab> {
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('MMM dd, yyyy • hh:mm a').format(o.createdAt),
-                      style: TextStyle(color: AppColors.textLight, fontSize: 12),
+                      style: TextStyle(color: AppColors.getSecondaryTextColor(isDark), fontSize: 12),
                     ),
                   ],
                 ),
@@ -230,19 +256,26 @@ class _OrdersTabState extends State<OrdersTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Total Amount', style: TextStyle(color: AppColors.textLight, fontSize: 11)),
-                        Text('₹${o.total}', style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Total Amount', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark), fontSize: 11)),
+                          Text(
+                            '₹${o.total}', 
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 18, color: isDark ? Colors.white : AppColors.primary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                     Row(
                       children: [
                         _buildStatusChip(o.paymentStatus),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
                         PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert_rounded),
+                          padding: EdgeInsets.zero,
                           onSelected: (status) => context.read<OrderProvider>().updateOrderStatus(o.id, status),
                           itemBuilder: (context) => [
                             'Processing', 'Shipped', 'Delivered', 'Cancelled'
@@ -311,6 +344,152 @@ class _OrdersTabState extends State<OrdersTab> {
   }
 
   void _showOrderDetails(Order o) {
-    // TODO: Implement Detailed Order Modal
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          width: 500,
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Order Details', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text('#${o.id.toUpperCase()}', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                    ],
+                  ),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                ],
+              ),
+              const Divider(height: 32),
+              _buildDetailRow('Customer', o.userName),
+              _buildDetailRow('Status', o.status.toUpperCase()),
+              _buildDetailRow('Amount', '₹${o.total}'),
+              _buildDetailRow('Payment', o.paymentStatus.toUpperCase()),
+              _buildDetailRow('Date', DateFormat('MMM dd, yyyy').format(o.createdAt)),
+              
+              const SizedBox(height: 24),
+              Text('Logistics (Shiprocket)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _buildShiprocketAction(
+                    label: 'Create Order',
+                    icon: Icons.add_business_rounded,
+                    color: Colors.blue,
+                    onTap: () => _handleShiprocketAction(o.id, 'create'),
+                  ),
+                  _buildShiprocketAction(
+                    label: 'Track',
+                    icon: Icons.track_changes_rounded,
+                    color: Colors.orange,
+                    onTap: () => _handleShiprocketAction(o.id, 'track'),
+                  ),
+                  _buildShiprocketAction(
+                    label: 'Cancel',
+                    icon: Icons.cancel_outlined,
+                    color: Colors.red,
+                    onTap: () => _handleShiprocketAction(o.id, 'cancel'),
+                  ),
+                  _buildShiprocketAction(
+                    label: 'Return',
+                    icon: Icons.keyboard_return_rounded,
+                    color: Colors.purple,
+                    onTap: () => _handleShiprocketAction(o.id, 'return'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: AppColors.getSecondaryTextColor(Theme.of(context).brightness == Brightness.dark))),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShiprocketAction({required String label, required IconData icon, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleShiprocketAction(String id, String action) async {
+    final provider = context.read<OrderProvider>();
+    Map<String, dynamic> result;
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Processing $action...')));
+
+    switch (action) {
+      case 'create': result = await provider.createShiprocketOrder(id); break;
+      case 'cancel': result = await provider.cancelShiprocketOrder(id); break;
+      case 'return': result = await provider.returnShiprocketOrder(id); break;
+      case 'track':
+        result = await provider.trackShiprocketOrder(id);
+        if (result['success']) {
+          _showTrackingInfo(result['data']);
+          return;
+        }
+        break;
+      default: return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? (result['success'] ? 'Success' : 'Failed')),
+          backgroundColor: result['success'] ? Colors.green : Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showTrackingInfo(dynamic data) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tracking Info'),
+        content: Text(data.toString()), // Simple for now, can be improved
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ),
+    );
   }
 }

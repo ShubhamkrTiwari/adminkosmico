@@ -24,19 +24,42 @@ class Coupon {
   });
 
   factory Coupon.fromJson(Map<String, dynamic> json) {
+    // Helper to parse double safely
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    // Helper to parse int safely
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now().add(const Duration(days: 30));
+      try {
+        return DateTime.parse(value.toString());
+      } catch (e) {
+        return DateTime.now().add(const Duration(days: 30));
+      }
+    }
+
     return Coupon(
-      id: json['_id'] ?? '',
-      code: json['code'] ?? '',
-      discountType: json['discountType'] ?? 'percentage',
-      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      minOrderAmount: (json['minOrderAmount'] as num?)?.toDouble() ?? 0.0,
-      expiryDate: json['expiryDate'] != null 
-          ? DateTime.parse(json['expiryDate']) 
-          : DateTime.now().add(const Duration(days: 30)),
-      usageLimit: json['usageLimit'] ?? 1000,
-      usedCount: json['usedCount'] ?? 0,
-      isActive: json['isActive'] ?? true,
-      description: json['description'],
+      id: json['_id']?.toString() ?? '',
+      code: json['code']?.toString() ?? '',
+      discountType: json['discountType']?.toString() ?? 'percentage',
+      discountAmount: parseDouble(json['discountAmount']),
+      minOrderAmount: parseDouble(json['minOrderAmount']),
+      expiryDate: parseDate(json['expiryDate']),
+      usageLimit: parseInt(json['usageLimit'] ?? 1000),
+      usedCount: parseInt(json['usedCount']),
+      isActive: json['isActive'] == true || json['isActive'] == 'true',
+      description: json['description']?.toString(),
     );
   }
 

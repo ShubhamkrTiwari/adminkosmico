@@ -5,10 +5,7 @@ const Category = require('../models/Category');
 
 const router = express.Router();
 
-router.use(protect);
-router.use(adminOnly);
-
-// GET /api/admin/categories - Get all categories
+// GET /api/categories or /api/admin/categories - Get all categories (Publicly accessible)
 router.get('/', async (req, res) => {
   try {
     const categoriesCount = await Category.countDocuments();
@@ -21,7 +18,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/admin/categories/:id - Get single category
+// GET /api/categories/:id - Get single category (Publicly accessible)
 router.get('/:id', async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
@@ -32,8 +29,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/admin/categories - Create category
-router.post('/', [
+// POST /api/categories - Create category (Admin only)
+router.post('/', protect, adminOnly, [
   body('name').trim().notEmpty().withMessage('Category name is required')
 ], async (req, res) => {
   try {
@@ -64,8 +61,8 @@ router.post('/', [
   }
 });
 
-// PUT /api/admin/categories/:id - Update category
-router.put('/:id', async (req, res) => {
+// PUT /api/categories/:id - Update category (Admin only)
+router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
@@ -87,8 +84,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/categories/:id - Delete category
-router.delete('/:id', async (req, res) => {
+// DELETE /api/categories/:id - Delete category (Admin only)
+router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
     if (!category) return res.status(404).json({ success: false, message: 'Category not found' });

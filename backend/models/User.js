@@ -56,6 +56,26 @@ const userSchema = new mongoose.Schema({
   totalSpend: {
     type: Number,
     default: 0
+  },
+  fcmToken: {
+    type: String,
+    default: ''
+  },
+  isSubscribed: {
+    type: Boolean,
+    default: false
+  },
+  subscriptionExpiry: {
+    type: Date
+  },
+  subscriptionPlan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription'
+  },
+  trialUsage: {
+    type: Map,
+    of: Number,
+    default: {}
   }
 }, {
   timestamps: true

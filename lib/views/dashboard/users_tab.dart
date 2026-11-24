@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants.dart';
 import '../../models/user.dart';
 import '../../providers/user_provider.dart';
@@ -29,18 +30,10 @@ class _UsersTabState extends State<UsersTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary.withOpacity(0.15),
-            const Color(0xFFF4F7F4),
-            Colors.white,
-          ],
-          stops: const [0.0, 0.4, 1.0],
-        ),
+        gradient: AppColors.getSubtleGradient(isDark),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -59,20 +52,23 @@ class _UsersTabState extends State<UsersTab> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Customer Management', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text('View and manage registered customers', style: TextStyle(color: AppColors.textLight)),
+        Text('Customer Management', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+        Text('View and manage registered customers', style: TextStyle(color: AppColors.getSecondaryTextColor(isDark))),
       ],
     );
   }
 
   Widget _buildSearchField() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
       ),
@@ -102,9 +98,10 @@ class _UsersTabState extends State<UsersTab> {
 
         if (filteredUsers.isEmpty) return const Center(child: Text('No users found'));
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[900] : Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
           ),
@@ -120,8 +117,13 @@ class _UsersTabState extends State<UsersTab> {
                   onTap: () => _showUserDetails(user),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: Text(user.name.isEmpty ? '?' : user.name[0].toUpperCase(), 
-                      style: const TextStyle(color: AppColors.primary)),
+                    backgroundImage: user.profilePic != null && user.profilePic!.isNotEmpty
+                        ? CachedNetworkImageProvider(user.profilePic!)
+                        : null,
+                    child: user.profilePic == null || user.profilePic!.isEmpty
+                        ? Text(user.name.isEmpty ? '?' : user.name[0].toUpperCase(), 
+                            style: const TextStyle(color: AppColors.primary))
+                        : null,
                   ),
                   title: Text(user.name, 
                     style: const TextStyle(fontWeight: FontWeight.bold),
@@ -199,9 +201,10 @@ class _UsersTabState extends State<UsersTab> {
                 return const Center(child: CircularProgressIndicator());
               }
               
-              final details = snapshot.data;
-              final stats = details?['stats'];
-              final orders = details?['orders'] as List? ?? [];
+              final data = snapshot.data;
+              final userDetails = data?['user'];
+              final shoppingSummary = data?['shoppingSummary'];
+              final recentOrders = data?['recentOrders'] as List? ?? [];
 
               return ListView(
                 controller: controller,
@@ -211,45 +214,72 @@ class _UsersTabState extends State<UsersTab> {
                     child: Container(
                       width: 40,
                       height: 4,
-                      margin: const EdgeInsets.only(bottom: 20),
+                      margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                     ),
                   ),
+                  
+                  // Profile Header
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
-                        child: Text(user.name[0].toUpperCase(), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primary.withOpacity(0.1), width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 44,
+                          backgroundColor: AppColors.primary.withOpacity(0.05),
+                          backgroundImage: user.profilePic != null && user.profilePic!.isNotEmpty
+                              ? CachedNetworkImageProvider(user.profilePic!)
+                              : null,
+                          child: user.profilePic == null || user.profilePic!.isEmpty
+                              ? Text(user.name.isEmpty ? '?' : user.name[0].toUpperCase(), 
+                                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary))
+                              : null,
+                        ),
                       ),
                       const SizedBox(width: 20),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.name, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-                            Text(user.email, style: TextStyle(color: AppColors.textLight)),
-                            const SizedBox(height: 8),
-                            _buildStatusBadge(user.accountStatus),
+                            Text(
+                              userDetails?['name'] ?? user.name, 
+                              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              userDetails?['email'] ?? user.email, 
+                              style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 14),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildStatusBadge(userDetails?['isBlocked'] == true ? 'blocked' : 'active'),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
-                  const Text('Contact Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 16),
-                  _buildInfoTile(Icons.phone_rounded, 'Phone Number', user.phone ?? 'Not provided'),
-                  _buildInfoTile(Icons.calendar_today_rounded, 'Joined On', DateFormat('MMM dd, yyyy').format(user.createdAt ?? DateTime.now())),
                   
                   const SizedBox(height: 32),
-                  const Text('Shopping Summary', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text('Contact Information', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const SizedBox(height: 20),
+                  _buildInfoTile(Icons.phone_outlined, 'Phone Number', userDetails?['phoneNumber'] ?? 'Not provided'),
+                  _buildInfoTile(Icons.calendar_today_outlined, 'Joined On', 
+                      userDetails?['createdAt'] != null 
+                        ? DateFormat('MMM dd, yyyy').format(DateTime.parse(userDetails!['createdAt']))
+                        : 'Unknown'),
+                  
+                  const SizedBox(height: 32),
+                  Text('Shopping Summary', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _buildStatBox('Total Orders', '${stats?['orderCount'] ?? 0}'),
+                      _buildStatBox('Total Orders', '${shoppingSummary?['totalOrders'] ?? 0}'),
                       const SizedBox(width: 16),
-                      _buildStatBox('Total Spend', '₹${stats?['totalSpend'] ?? 0}'),
+                      _buildStatBox('Total Spend', '₹${shoppingSummary?['totalSpend'] ?? 0}'),
                     ],
                   ),
                   
@@ -257,21 +287,26 @@ class _UsersTabState extends State<UsersTab> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Recent Orders', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      TextButton(onPressed: () {}, child: const Text('View All')),
+                      Text('Recent Orders', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+                      TextButton(
+                        onPressed: () => _showAllOrders(user.id, user.name), 
+                        child: const Text('View All', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
-                  if (orders.isEmpty)
-                    const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No orders yet')))
-                  else
-                    ...orders.take(3).map((o) => Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        title: Text('Order #${o['_id'].toString().substring(o['_id'].toString().length > 6 ? o['_id'].toString().length - 6 : 0).toUpperCase()}'),
-                        subtitle: Text(DateFormat('MMM dd, yyyy').format(DateTime.parse(o['createdAt']))),
-                        trailing: Text('₹${o['amount'] ?? o['total']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  if (recentOrders.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    )),
+                      child: const Center(child: Text('No orders yet', style: TextStyle(color: Colors.grey))),
+                    )
+                  else
+                    ...recentOrders.take(5).map((o) => _buildOrderTile(o)),
+                  
+                  const SizedBox(height: 40),
                 ],
               );
             },
@@ -283,16 +318,23 @@ class _UsersTabState extends State<UsersTab> {
 
   Widget _buildInfoTile(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 22, color: Colors.blueGrey.shade700),
+          ),
+          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+              Text(label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w500)),
+              Text(value, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.blueGrey.shade900)),
             ],
           ),
         ],
@@ -303,17 +345,140 @@ class _UsersTabState extends State<UsersTab> {
   Widget _buildStatBox(String label, String value) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+          ],
         ),
         child: Column(
           children: [
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
+            Text(value, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87)),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderTile(Map<String, dynamic> o) {
+    final orderId = o['_id'].toString();
+    final displayId = orderId.length > 8 ? orderId.substring(orderId.length - 8).toUpperCase() : orderId;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), shape: BoxShape.circle),
+            child: const Icon(Icons.shopping_bag_outlined, color: Colors.blue, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Order #$displayId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  DateFormat('MMM dd, yyyy • hh:mm a').format(DateTime.parse(o['createdAt'])), 
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('₹${o['amount'] ?? o['total']}', style: GoogleFonts.poppins(fontWeight: FontWeight.w800, fontSize: 15)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (o['orderStatus'] == 'Delivered' ? Colors.green : Colors.orange).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  (o['orderStatus'] ?? 'Pending').toString().toUpperCase(),
+                  style: TextStyle(
+                    color: o['orderStatus'] == 'Delivered' ? Colors.green : Colors.orange,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAllOrders(String userId, String userName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        maxChildSize: 0.95,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Order History', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text(userName, style: const TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<List<dynamic>>(
+                  future: context.read<UserProvider>().fetchUserOrders(userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final orders = snapshot.data ?? [];
+                    if (orders.isEmpty) return const Center(child: Text('No orders found'));
+
+                    return ListView.builder(
+                      controller: controller,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      itemCount: orders.length,
+                      itemBuilder: (context, index) => _buildOrderTile(orders[index]),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
